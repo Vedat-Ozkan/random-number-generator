@@ -62,7 +62,7 @@ export function sampleWithReplacement(min, max, k) {
 
 // Shared Number/List generate logic (spec 5.2). Pure: returns new drawn pool,
 // the values and any toast notes.
-export function draw({ min, max, count, noRepeat, allowDupes = false, drawn = [], sort = false, label = 'numbers' }) {
+export function draw({ min, max, count, noRepeat, allowDupes = false, drawn = [], sort = false, label = 'numbers', resetNote }) {
   const size = max - min + 1;
   const notes = [];
   let pool = drawn.slice();
@@ -70,7 +70,7 @@ export function draw({ min, max, count, noRepeat, allowDupes = false, drawn = []
   if (noRepeat) {
     if (pool.length >= size) {
       pool = [];
-      notes.push(`All ${label} drawn — pool reset`);
+      notes.push(resetNote || `All ${label} drawn — pool reset`);
     }
     const remaining = size - pool.length;
     const k = Math.min(count, remaining);
@@ -86,4 +86,60 @@ export function draw({ min, max, count, noRepeat, allowDupes = false, drawn = []
   }
   if (sort) values.sort((a, b) => a - b);
   return { values, drawn: pool, notes };
+}
+
+// Index in [0, weights.length) with probability proportional to weights[i] (integers >= 1).
+export function weightedIndex(weights, excludeSet = new Set()) {
+  let total = 0;
+  for (let i = 0; i < weights.length; i++) if (!excludeSet.has(i)) total += weights[i];
+  if (total <= 0) throw new RangeError('No weight available');
+  let r = randInt(0, total - 1);
+  for (let i = 0; i < weights.length; i++) {
+    if (excludeSet.has(i)) continue;
+    if (r < weights[i]) return i;
+    r -= weights[i];
+  }
+  throw new Error('unreachable');
+}
+
+// Weighted counterpart of draw() over entry indices. Picks are distinct within a batch.
+export function drawWeighted({ weights, count, noRepeat, drawn = [], label = 'items', resetNote }) {
+  const size = weights.length;
+  const notes = [];
+  let pool = drawn.slice();
+  if (noRepeat && pool.length >= size) {
+    pool = [];
+    notes.push(resetNote || `All ${label} drawn — pool reset`);
+  }
+  const available = size - (noRepeat ? pool.length : 0);
+  const k = Math.min(count, available);
+  if (k < count) notes.push(noRepeat ? `Only ${k} left in pool` : `List has only ${size} ${label}`);
+  const exclude = new Set(noRepeat ? pool : []);
+  const values = [];
+  for (let i = 0; i < k; i++) {
+    const idx = weightedIndex(weights, exclude);
+    exclude.add(idx);
+    values.push(idx);
+  }
+  if (noRepeat) pool.push(...values);
+  return { values, drawn: pool, notes };
+}
+
+// Shuffles names and deals them round-robin. Team sizes differ by at most 1.
+export function splitTeams(names, mode, n) {
+  if (!names.length) return [];
+  const teamCount = mode === 'teams' ? Math.min(n, names.length) : Math.ceil(names.length / n);
+  const teams = Array.from({ length: teamCount }, () => []);
+  shuffle(names.slice()).forEach((name, i) => teams[i % teamCount].push(name));
+  return teams;
+}
+
+export function drawLottery({ n, k, bonusK, bonusN, bonusSame }) {
+  const asc = (a, b) => a - b;
+  const main = sampleDistinct(1, n, k).sort(asc);
+  let bonus = [];
+  if (bonusK > 0) {
+    bonus = (bonusSame ? sampleDistinct(1, n, bonusK, new Set(main)) : sampleDistinct(1, bonusN, bonusK)).sort(asc);
+  }
+  return { main, bonus };
 }

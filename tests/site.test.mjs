@@ -5,6 +5,8 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parsePreset } from '../js/site.js';
+import { PAGES, GROUPS } from '../tools/pages-data.mjs';
+import { BUILTIN_LISTS } from '../js/tools.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 let passed = 0;
@@ -35,6 +37,70 @@ test('parsePreset rejects bad input', () => {
     { list: { id: 'preset-a', name: 'x', items: 'nope' } },
     { list: { id: 'preset-a', name: 'x', items: [1] } },
   ]) assert.equal(parsePreset(bad), null, JSON.stringify(bad));
+});
+
+test('parsePreset accepts tool shapes', () => {
+  assert.deepEqual(parsePreset({ dice: { count: 1, sides: 20, modifier: 0 } }), { dice: { count: 1, sides: 20, modifier: 0 } });
+  assert.deepEqual(parsePreset('{"lottery":{"n":69,"k":5}}'), { lottery: { n: 69, k: 5 } });
+  for (const bad of [
+    { dice: { sides: 1 } }, { dice: { foo: 1 } }, { dice: {}, number: {} }, { teams: { n: 3 } },
+    { dice: null }, { dice: [] }, { cards: { count: 11 } },
+  ]) assert.equal(parsePreset(bad), null, JSON.stringify(bad));
+});
+
+test('page data: 29 pages, groups, copy limits', () => {
+  assert.equal(PAGES.length, 29);
+  const groups = new Set(GROUPS.map(([id]) => id));
+  const seen = new Set();
+  for (const p of PAGES.filter((x) => x.tool && x.slug)) {
+    assert.ok(groups.has(p.group), 'group: ' + p.slug);
+    assert.ok(p.nav && p.blurb, 'nav/blurb: ' + p.slug);
+    assert.ok(p.intro.length >= 2 && p.faq.length >= 2, 'copy: ' + p.slug);
+  }
+  for (const p of PAGES) {
+    assert.ok(p.description.length >= 50 && p.description.length <= 160, 'description length: ' + p.slug);
+    assert.ok(!seen.has(p.title) && !seen.has(p.description), 'unique: ' + p.slug);
+    seen.add(p.title); seen.add(p.description);
+    if (p.preset?.list) {
+      const b = BUILTIN_LISTS[p.preset.list.id];
+      assert.deepEqual(p.preset.list.items, b.items);
+      assert.equal(p.entry, '/list/' + p.preset.list.id);
+    }
+  }
+});
+
+test('grouped nav has no self link; sw precache and manifest', () => {
+  for (const p of PAGES.filter((x) => x.tool && x.slug)) {
+    const html = readFileSync(path.join(ROOT, p.slug, 'index.html'), 'utf8');
+    const nav = html.match(/<nav class="other-tools"[\s\S]*?<\/nav>/)[0];
+    assert.ok(nav.includes('<h3>'), 'grouped: ' + p.slug);
+    assert.ok(!nav.includes(`href="../${p.slug}/"`), 'no self link: ' + p.slug);
+    assert.ok(nav.includes('href="../">All tools'), 'all tools link: ' + p.slug);
+  }
+  const sw = readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
+  for (const m of ['tools', 'parse', 'search', 'presets'].map((x) => `./js/${x}.js`)
+    .concat(['source', 'teams', 'shuffle', 'wheel', 'lottery', 'cards'].map((x) => `./js/screens/${x}.js`))) {
+    assert.ok(sw.includes(`'${m}'`), 'precache ' + m);
+  }
+  for (const p of PAGES.filter((x) => x.slug)) assert.ok(sw.includes(`'./${p.slug}/'`), 'precache page ' + p.slug);
+  const man = JSON.parse(readFileSync(path.join(ROOT, 'manifest.webmanifest'), 'utf8'));
+  assert.deepEqual(man.shortcuts.map((x) => x.name), ['Number', 'Dice', 'Coin', 'Wheel']);
+  assert.equal(man.theme_color, '#0B0B0C');
+});
+
+test('source hygiene: no Math.random, innerHTML only in ui.icon, no old cyan', () => {
+  const files = [];
+  const walk = (d) => { for (const n of readdirSync(d)) { const f = path.join(d, n); if (statSync(f).isDirectory()) walk(f); else if (f.endsWith('.js')) files.push(f); } };
+  walk(path.join(ROOT, 'js'));
+  let inner = 0;
+  for (const f of files) {
+    const src = readFileSync(f, 'utf8');
+    assert.ok(!/Math\.random/.test(src), f);
+    inner += (src.match(/innerHTML/g) || []).length;
+    assert.ok(!/4DD0E1|00838F|00ACC1/i.test(src), f);
+  }
+  assert.equal(inner, 1);
+  assert.ok(!/4DD0E1|00838F|00ACC1/i.test(readFileSync(path.join(ROOT, 'css/app.css'), 'utf8')));
 });
 
 const readSafe = (p) => (existsSync(path.join(ROOT, p)) ? readFileSync(path.join(ROOT, p)) : Buffer.alloc(0));
@@ -80,7 +146,7 @@ test('generated output with the committed config', () => {
   const config = readFileSync(path.join(ROOT, 'js/config.js'), 'utf8');
   const empty = /SITE_URL: '',/.test(config) && /ADSENSE_CLIENT: '',/.test(config);
   const files = pages();
-  assert.equal(files.length, 10);
+  assert.equal(files.length, PAGES.length);
   for (const f of files) {
     const html = readFileSync(f, 'utf8');
     assert.ok(!/\{\{[A-Z_]+\}\}/.test(html), 'no unresolved placeholders: ' + f);

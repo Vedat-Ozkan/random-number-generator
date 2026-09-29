@@ -1,7 +1,9 @@
 // App state: one localStorage key, normalized on load.
+import { CONFIG_DEFAULTS, CONFIG_TOOLS, cleanConfig, BUILTIN_LISTS } from './tools.js';
+import { randInt } from './rng.js';
 
 const KEY = 'random:state';
-const VERSION = 1;
+const VERSION = 2;
 
 export const DEFAULTS = {
   version: VERSION,
@@ -12,16 +14,26 @@ export const DEFAULTS = {
     items: ['Yes', 'No', 'Maybe', 'Ask again later'],
     noRepeat: false, drawn: [], pickCount: 1,
   }],
-  dice: { count: 2, values: [1, 1] },
-  coin: { heads: 0, tails: 0, last: null },
+  dice: { count: 2, sides: 6, modifier: 0, values: [1, 1] },
+  coin: { heads: 0, tails: 0, last: null, run: 0, best: 0, bestFace: null },
   lots: { n: 6, k: 1 },
+  teams: { ...CONFIG_DEFAULTS.teams },
+  shuffle: { ...CONFIG_DEFAULTS.shuffle },
+  wheel: { ...CONFIG_DEFAULTS.wheel },
+  lottery: { ...CONFIG_DEFAULTS.lottery },
+  cards: { ...CONFIG_DEFAULTS.cards, drawn: [] },
+  presets: [], // [{ id, tool, name, config, t }] in creation order
   history: {},
 };
 
 // MIGRATIONS[v] upgrades a state of version v to v + 1.
 const MIGRATIONS = [
   (raw) => raw, // 0 -> 1: unversioned data is already compatible
+  (raw) => ({ ...raw, version: 2 }), // 1 -> 2: new sections are filled from defaults by normalize()
 ];
+
+export const MAX_PRESETS_PER_TOOL = 20;
+export const MAX_PRESETS = 100;
 
 const BOUND = 1e9;
 const MAX_ITEMS = 500;
@@ -55,6 +67,28 @@ function normalizeList(l) {
     drawn: cleanDrawn(l.drawn, 0, items.length - 1),
     pickCount: clampInt(l.pickCount, 1, Math.max(1, Math.min(20, items.length)), 1),
   };
+}
+
+function normalizePresets(arr) {
+  const ids = new Set();
+  const perTool = {};
+  const out = [];
+  for (const p of arr) {
+    if (out.length >= MAX_PRESETS) break;
+    if (!isObj(p) || typeof p.id !== 'string' || !/^[\w-]{1,64}$/.test(p.id) || ids.has(p.id)) continue;
+    if (!CONFIG_TOOLS.includes(p.tool) || typeof p.name !== 'string' || !isObj(p.config)) continue;
+    const name = p.name.trim().slice(0, 60);
+    if (!name) continue;
+    if ((perTool[p.tool] || 0) >= MAX_PRESETS_PER_TOOL) continue;
+    ids.add(p.id);
+    perTool[p.tool] = (perTool[p.tool] || 0) + 1;
+    out.push({
+      id: p.id, tool: p.tool, name,
+      config: cleanConfig(p.tool, p.config, { lenient: true }),
+      t: typeof p.t === 'number' && Number.isFinite(p.t) ? p.t : 0,
+    });
+  }
+  return out;
 }
 
 export function normalize(input) {
@@ -99,22 +133,38 @@ export function normalize(input) {
   }
 
   if (isObj(raw.dice)) {
-    const count = clampInt(raw.dice.count, 1, 6, 2);
+    const count = clampInt(raw.dice.count, 1, 12, 2);
+    const sides = clampInt(raw.dice.sides, 2, 100, 6);
     const vals = Array.isArray(raw.dice.values) ? raw.dice.values : [];
     s.dice.count = count;
-    s.dice.values = Array.from({ length: count }, (_, i) => clampInt(vals[i], 1, 6, 1));
+    s.dice.sides = sides;
+    s.dice.modifier = clampInt(raw.dice.modifier, -99, 99, 0);
+    s.dice.values = Array.from({ length: count }, (_, i) => clampInt(vals[i], 1, sides, 1));
   }
 
   if (isObj(raw.coin)) {
     s.coin.heads = clampInt(raw.coin.heads, 0, Number.MAX_SAFE_INTEGER, 0);
     s.coin.tails = clampInt(raw.coin.tails, 0, Number.MAX_SAFE_INTEGER, 0);
     s.coin.last = raw.coin.last === 'heads' || raw.coin.last === 'tails' ? raw.coin.last : null;
+    const run = clampInt(raw.coin.run, 0, Number.MAX_SAFE_INTEGER, 0);
+    s.coin.run = s.coin.last ? Math.max(1, run) : 0;
+    s.coin.best = Math.max(clampInt(raw.coin.best, 0, Number.MAX_SAFE_INTEGER, 0), s.coin.run);
+    s.coin.bestFace = raw.coin.bestFace === 'heads' || raw.coin.bestFace === 'tails' ? raw.coin.bestFace : null;
+    if (s.coin.best > 0 && !s.coin.bestFace) s.coin.bestFace = s.coin.last;
   }
 
   if (isObj(raw.lots)) {
     s.lots.n = clampInt(raw.lots.n, 2, 30, 6);
     s.lots.k = clampInt(raw.lots.k, 1, s.lots.n - 1, 1);
   }
+
+  for (const tool of ['teams', 'shuffle', 'wheel', 'lottery', 'cards']) {
+    if (!isObj(raw[tool])) continue;
+    const c = cleanConfig(tool, raw[tool], { lenient: true });
+    s[tool] = tool === 'cards' ? { ...c, drawn: cleanDrawn(raw.cards.drawn, 0, c.jokers ? 53 : 51) } : c;
+  }
+
+  if (Array.isArray(raw.presets)) s.presets = normalizePresets(raw.presets);
 
   if (isObj(raw.history)) {
     for (const key of Object.keys(raw.history)) {
@@ -184,6 +234,61 @@ export function deleteList(id) {
     s.lists = s.lists.filter((l) => l.id !== id);
     delete s.history['list:' + id];
   });
+}
+
+const newId = () => globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36) + randInt(0, 2 ** 31).toString(36);
+
+// Returns the new preset id, or null when a limit is hit.
+export function addPreset(tool, name, config) {
+  const ps = state.presets;
+  if (ps.length >= MAX_PRESETS || ps.filter((p) => p.tool === tool).length >= MAX_PRESETS_PER_TOOL) return null;
+  const id = newId();
+  update((s) => {
+    s.presets.push({
+      id, tool, name: name.trim().slice(0, 60),
+      config: cleanConfig(tool, config, { lenient: true }), t: Date.now(),
+    });
+  });
+  return id;
+}
+
+export const getPreset = (id) => state.presets.find((p) => p.id === id) || null;
+
+export function updatePreset(id, config) {
+  update((s) => {
+    const p = s.presets.find((x) => x.id === id);
+    if (p) p.config = cleanConfig(p.tool, config, { lenient: true });
+  });
+}
+
+export function renamePreset(id, name) {
+  update((s) => {
+    const p = s.presets.find((x) => x.id === id);
+    const n = name.trim().slice(0, 60);
+    if (p && n) p.name = n;
+  });
+}
+
+export function deletePreset(id) {
+  update((s) => { s.presets = s.presets.filter((p) => p.id !== id); });
+}
+
+export function renameList(id, name) {
+  update((s) => {
+    const l = s.lists.find((x) => x.id === id);
+    const n = name.trim().slice(0, 60);
+    if (l && n) l.name = n;
+  });
+}
+
+// Creates the builtin list when it is missing. Returns the list or null.
+export function ensureBuiltinList(id) {
+  const existing = state.lists.find((l) => l.id === id);
+  if (existing) return existing;
+  const b = Object.hasOwn(BUILTIN_LISTS, id) ? BUILTIN_LISTS[id] : null;
+  if (!b) return null;
+  update((s) => { s.lists.push({ id, name: b.name, items: [...b.items], noRepeat: false, drawn: [], pickCount: 1 }); });
+  return state.lists.find((l) => l.id === id);
 }
 
 // Wipes storage and resets memory WITHOUT writing back (caller reloads).

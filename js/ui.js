@@ -1,9 +1,10 @@
 // DOM helpers and shared components.
 import { getState, update } from './store.js';
-import { randInt } from './rng.js';
 import { back, beforeMount } from './router.js';
+import { parseItems, splitImport } from './parse.js';
+import { MAX_TEXT } from './tools.js';
 
-export const PALETTE = ['#7B1FA2', '#C2185B', '#D32F2F', '#E64A19', '#00796B', '#388E3C', '#1976D2', '#303F9F', '#6A4FB6', '#0097A7'];
+export const PALETTE = ['#4F46E5', '#0F766E', '#B45309', '#BE185D', '#1D4ED8', '#15803D', '#7C3AED', '#C2410C', '#334155', '#9F1239'];
 
 export const motionOn = () => document.documentElement.dataset.motion !== 'off';
 
@@ -42,11 +43,20 @@ function append(el, children) {
 
 /* ---------- icons (static SVG strings only) ---------- */
 const svg = (inner) =>
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
   inner + '</svg>';
 
 export const icons = {
-  back: svg('<path d="M19 12H5M12 5l-7 7 7 7"/>'),
+  back: svg('<path d="M15 5l-7 7 7 7"/>'),
+  chevron: svg('<path d="M9 5l7 7-7 7"/>'),
+  search: svg('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/>'),
+  share: svg('<path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>'),
+  paste: svg('<rect x="8" y="3" width="8" height="4" rx="1.5"/><path d="M8 5H6.5A1.5 1.5 0 0 0 5 6.5v13A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 17.5 5H16"/>'),
+  teams: svg('<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.1a4.5 4.5 0 0 1 5 4.9"/>'),
+  shuffle: svg('<path d="M3 7h3.5c2.2 0 3.6 1.2 4.7 3.2l1.6 3.6c1.1 2 2.5 3.2 4.7 3.2H21M3 17h3.5c1.4 0 2.5-.5 3.4-1.4M14.1 8.4c.9-.9 2-1.4 3.4-1.4H21M18 4l3 3-3 3M18 14l3 3-3 3"/>'),
+  wheel: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.5"/><path d="M12 3v7.5M12 13.5V21M3 12h7.5M13.5 12H21M5.6 5.6l5.3 5.3M13.1 13.1l5.3 5.3"/>'),
+  lottery: svg('<circle cx="8.5" cy="14.5" r="5.5"/><circle cx="16" cy="8.5" r="4.5"/><path d="M8 13l1-1v5M15.2 7.5h1.6l-1.2 3"/>'),
+  cards: svg('<rect x="8" y="3" width="12" height="16" rx="2"/><path d="M8 6.5L4.6 7.4a1.5 1.5 0 0 0-1.1 1.8l2.9 10.6a1.5 1.5 0 0 0 1.8 1.1L13 19.6"/>'),
   settings: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
   refresh: svg('<path d="M21 4v6h-6M3 20v-6h6"/><path d="M4.5 9a8 8 0 0 1 13.6-2.9L21 10M3 14l2.9 3.9A8 8 0 0 0 19.5 15"/>'),
   volumeOn: svg('<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'),
@@ -85,8 +95,8 @@ export function iconButton({ icon: name, label, onClick, cls = '', pressed }) {
 }
 
 /* ---------- top bar / FAB / pill ---------- */
-export function topBar({ title, showBack = true, actions = [] }) {
-  return h('header', { class: 'topbar' },
+export function topBar({ title, showBack = true, actions = [], large = false }) {
+  return h('header', { class: 'topbar' + (large ? ' large' : '') },
     showBack ? iconButton({ icon: 'back', label: 'Back', onClick: back, cls: 'topbar-back' }) : null,
     h('h1', { attrs: { tabindex: '-1' }, text: title }),
     h('div', { class: 'topbar-actions' }, ...actions));
@@ -112,12 +122,12 @@ export function soundToggle() {
   return btn;
 }
 
-export function fab({ label, onClick, disabled = false }) {
+export function fab({ label, icon: iconName = 'refresh', onClick, disabled = false }) {
   return h('button', {
     class: 'fab' + (disabled ? ' disabled' : ''),
-    attrs: { type: 'button', 'aria-label': label, 'aria-disabled': disabled ? 'true' : null },
+    attrs: { type: 'button', 'aria-disabled': disabled ? 'true' : null },
     on: { click: onClick },
-  }, icon('refresh'));
+  }, icon(iconName), h('span', { text: label }));
 }
 
 export function paramsPill(onClick) {
@@ -172,6 +182,32 @@ export async function copyText(text) {
   } catch {
     toast('Copy failed');
   }
+}
+
+// "Paste" button: appends clipboard items (comma, semicolon, tab or newline separated) as lines.
+export function pasteButton(textarea, maxItems = 500) {
+  return h('button', {
+    class: 'btn sm tonal', attrs: { type: 'button' },
+    on: {
+      click: async () => {
+        let text = '';
+        try { text = await navigator.clipboard.readText(); } catch { text = null; }
+        if (text === null) {
+          toast("Can't read the clipboard \u2014 paste with your keyboard instead");
+          return;
+        }
+        const incoming = splitImport(text).map((t) => t.slice(0, 200));
+        const room = Math.max(0, maxItems - parseItems(textarea.value).length);
+        const take = incoming.slice(0, room);
+        if (take.length) {
+          const cur = textarea.value;
+          textarea.value = (cur + (cur && !cur.endsWith('\n') ? '\n' : '') + take.join('\n')).slice(0, MAX_TEXT);
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        toast(`Added ${take.length} ${take.length === 1 ? 'item' : 'items'}` + (take.length < incoming.length ? ` (limit ${maxItems})` : ''));
+      },
+    },
+  }, icon('paste', 'sm'), h('span', { text: 'Paste' }));
 }
 
 /* ---------- switch / stepper ---------- */
@@ -236,6 +272,64 @@ export function stepper({ label, value, min, max, onChange, format = String }) {
     set(n) { v = Math.min(hi, Math.max(lo, n)); paint(); },
     setRange(l, hgh) { lo = l; hi = hgh; v = Math.min(hi, Math.max(lo, v)); paint(); },
   };
+}
+
+/* ---------- segmented control / chips ---------- */
+// options: [[value, label]]. Roving tabindex, arrow keys; disabled values use aria-disabled.
+export function segmented({ label, options, value, onChange }) {
+  let cur = value;
+  const disabled = new Set();
+  const btns = options.map(([v, text]) => h('button', {
+    class: 'seg', attrs: { type: 'button', role: 'radio' }, text,
+    on: { click: () => choose(v) },
+  }));
+  const el = h('div', { class: 'segmented', attrs: { role: 'radiogroup', 'aria-label': label } }, btns);
+  function paint() {
+    btns.forEach((b, i) => {
+      const on = options[i][0] === cur;
+      b.setAttribute('aria-checked', String(on));
+      b.tabIndex = on ? 0 : -1;
+      const d = disabled.has(options[i][0]);
+      b.setAttribute('aria-disabled', d ? 'true' : 'false');
+      b.classList.toggle('disabled', d);
+    });
+  }
+  function choose(v, notify = true) {
+    if (disabled.has(v) || v === cur) return;
+    cur = v;
+    paint();
+    if (notify) onChange(v);
+  }
+  el.addEventListener('keydown', (e) => {
+    const dir = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    let i = options.findIndex(([v]) => v === cur);
+    for (let n = 0; n < options.length; n++) {
+      i = (i + dir + options.length) % options.length;
+      if (!disabled.has(options[i][0])) break;
+    }
+    choose(options[i][0]);
+    btns[i].focus();
+  });
+  paint();
+  return {
+    el,
+    set(v) { cur = v; paint(); },
+    setDisabled(v, d) { if (d) disabled.add(v); else disabled.delete(v); paint(); },
+  };
+}
+
+// A row of toggle chips (aria-pressed). options: [[value, label]]; `isOn(value)` decides the pressed state.
+export function chipRow({ label, options, isOn, onPick }) {
+  const btns = options.map(([v, text]) => h('button', {
+    class: 'chip', attrs: { type: 'button', 'aria-pressed': 'false' }, text,
+    on: { click: () => { onPick(v); paint(); } },
+  }));
+  const el = h('div', { class: 'chips', attrs: { role: 'group', 'aria-label': label } }, btns);
+  function paint() { btns.forEach((b, i) => b.setAttribute('aria-pressed', String(!!isOn(options[i][0])))); }
+  paint();
+  return { el, paint };
 }
 
 /* ---------- popover menu ---------- */
@@ -315,8 +409,39 @@ export function confirmDialog({ message, confirmLabel = 'Delete', danger = true 
   });
 }
 
+// Resolves to the trimmed text, or null on cancel.
+export function promptDialog({ title, label, value = '', confirmLabel = 'Save' }) {
+  return new Promise((resolve) => {
+    const tid = uid('pd');
+    const input = h('input', { class: 'field', attrs: { type: 'text', maxlength: '60', autocomplete: 'off', autocapitalize: 'sentences', spellcheck: 'false' } });
+    input.value = value;
+    const ok = h('button', { class: 'btn filled', attrs: { type: 'submit' }, text: confirmLabel });
+    const dlg = h('dialog', { class: 'confirm prompt', attrs: { 'aria-labelledby': tid } },
+      h('form', { attrs: { method: 'dialog' }, on: {
+        submit: (e) => { e.preventDefault(); if (input.value.trim()) dlg.close('ok'); },
+      } },
+      h('h2', { attrs: { id: tid }, text: title }),
+      h('label', { class: 'field-caption', text: label }, input),
+      h('div', { class: 'confirm-actions' },
+        h('button', { class: 'btn', attrs: { type: 'button' }, text: 'Cancel', on: { click: () => dlg.close('cancel') } }),
+        ok)));
+    const paint = () => { ok.disabled = !input.value.trim(); };
+    input.addEventListener('input', paint);
+    paint();
+    dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close('cancel'); });
+    dlg.addEventListener('close', () => { const v = dlg.returnValue === 'ok' ? input.value.trim() : null; dlg.remove(); resolve(v); });
+    document.body.append(dlg);
+    dlg.showModal();
+    input.focus();
+    input.select();
+  });
+}
+
 /* ---------- No repeat card ---------- */
-export function noRepeatCard({ onToggle, onReset }) {
+export function noRepeatCard({
+  onToggle, onReset, label = 'No repeat', resetLabel = 'Reset pool', resetToast = 'Pool reset',
+  format = ({ drawn, total }) => `${drawn} / ${total}`,
+}) {
   const id = uid('nr');
   let on = false;
   let drawn = 0;
@@ -325,20 +450,20 @@ export function noRepeatCard({ onToggle, onReset }) {
   const more = iconButton({
     icon: 'more', label: 'Pool options',
     onClick: () => openMenu(more, [{
-      label: 'Reset pool', disabled: !on || drawn === 0,
-      onClick: () => { onReset(); toast('Pool reset'); },
+      label: resetLabel, disabled: !on || drawn === 0,
+      onClick: () => { onReset(); toast(resetToast); },
     }]),
   });
   more.setAttribute('aria-haspopup', 'menu');
   const el = h('div', { class: 'card nr-card' },
-    h('div', { class: 'nr-main', on: { click: () => onToggle(!on) } }, sw, h('span', { class: 'nr-label', attrs: { id }, text: 'No repeat' })),
+    h('div', { class: 'nr-main', on: { click: () => onToggle(!on) } }, sw, h('span', { class: 'nr-label', attrs: { id }, text: label })),
     counter, more);
   return {
     el,
     update(s) {
       on = s.on; drawn = s.drawn;
       sw.setChecked(on);
-      counter.textContent = on ? `${s.drawn} / ${s.total}` : 'Off';
+      counter.textContent = on ? format(s) : 'Off';
       counter.classList.toggle('muted', !on);
     },
   };
@@ -347,19 +472,23 @@ export function noRepeatCard({ onToggle, onReset }) {
 /* ---------- result overlay ---------- */
 let ov = null;
 let card = null;
-let copyBtn = null;
-let cur = { text: '', again: null, ret: null };
-let lastColor = -1;
+let cap = null;
+let body = null;
+let shareBtn = null;
+let cur = { text: '', again: null, ret: null, share: null };
 
 function ensureOverlay() {
   if (ov) return;
-  card = h('div', { class: 'result-card', attrs: { tabindex: '0' }, on: { click: () => cur.again?.() } });
-  copyBtn = iconButton({ icon: 'copy', label: 'Copy result', cls: 'result-copy', onClick: () => copyText(cur.text) });
+  cap = h('div', { class: 'result-caption' });
+  body = h('div', { class: 'result-body' });
+  card = h('div', { class: 'result-card', attrs: { tabindex: '0' }, on: { click: () => cur.again?.() } }, cap, body);
+  const copyBtn = h('button', { class: 'btn sm tonal', attrs: { type: 'button' }, on: { click: () => copyText(cur.text) } }, icon('copy', 'sm'), h('span', { text: 'Copy' }));
+  shareBtn = h('button', { class: 'btn sm tonal', attrs: { type: 'button' }, on: { click: () => cur.share?.() } }, icon('share', 'sm'), h('span', { text: 'Share' }));
   ov = h('div', {
     class: 'result-overlay',
     attrs: { role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Result' },
-    on: { click: (e) => { if (e.target === ov) closeResult(); } },
-  }, card, copyBtn);
+    on: { click: (e) => { if (e.target === ov || e.target.classList.contains('result-actions')) closeResult(); } },
+  }, card, h('div', { class: 'result-actions' }, copyBtn, shareBtn));
   ov.hidden = true;
   document.body.append(ov);
 }
@@ -377,31 +506,31 @@ function setBackgroundInert(on) {
 
 function resultFontSize(values, lines) {
   const text = values.join(lines ? '\n' : ', ');
-  if (!lines && values.length === 1 && text.length <= 4) return 'clamp(64px, 22vw, 140px)';
-  if (text.length <= 12) return '48px';
-  if (text.length <= 40) return '32px';
-  return '22px';
+  if (!lines && values.length === 1 && text.length <= 4) return 'var(--fs-display)';
+  if (text.length <= 12) return '44px';
+  if (text.length <= 40) return '30px';
+  return '20px';
 }
 
-export function showResult({ values, lines = false, onAgain, returnFocus }) {
+export function showResult({ values, lines = false, caption = '', onAgain, onShare, returnFocus }) {
   ensureOverlay();
   const wasOpen = isResultOpen();
-  let i;
-  do { i = randInt(0, PALETTE.length - 1); } while (i === lastColor);
-  lastColor = i;
-  cur = { text: values.join(lines ? '\n' : ', '), again: onAgain, ret: returnFocus || cur.ret };
+  cur = { text: values.join(lines ? '\n' : ', '), again: onAgain, share: onShare, ret: returnFocus || cur.ret };
 
-  card.style.background = PALETTE[i];
+  cap.textContent = caption;
+  cap.hidden = !caption;
+  shareBtn.hidden = !onShare;
   card.style.fontSize = resultFontSize(values, lines);
   card.classList.toggle('lines', lines);
-  card.replaceChildren(h('div', { class: 'result-inner' }, ...values.map((v) => h('span', { class: 'result-val', text: v }))));
-  card.scrollTop = 0;
+  body.replaceChildren(h('div', { class: 'result-inner' }, ...values.map((v) => h('span', { class: 'result-val', text: v }))));
+  body.scrollTop = 0;
   ov.hidden = false;
   setBackgroundInert(true);
   ov.classList.toggle('enter', !wasOpen);
-  card.classList.remove('pop');
-  void card.offsetWidth; // restart animation
-  card.classList.add('pop');
+  const inner = body.firstChild;
+  inner.classList.remove('reveal');
+  void inner.offsetWidth; // restart animation
+  inner.classList.add('reveal');
   if (!wasOpen) card.focus({ preventScroll: true });
   announce(cur.text.replace(/\n/g, ', '));
 }
@@ -420,3 +549,20 @@ export function closeAllOverlays() {
 }
 
 beforeMount(closeAllOverlays);
+
+/* ---------- inline result helpers (Teams, Shuffle, Wheel, Lottery, Cards) ---------- */
+// Copy / Share buttons under an inline result. Hidden until `.hidden = false`.
+export function resultActions({ getText, onShare }) {
+  return h('div', { class: 'inline-actions', attrs: { hidden: true } },
+    h('button', { class: 'btn sm tonal', attrs: { type: 'button' }, on: { click: () => copyText(getText()) } }, icon('copy', 'sm'), h('span', { text: 'Copy' })),
+    h('button', { class: 'btn sm tonal', attrs: { type: 'button' }, on: { click: () => onShare() } }, icon('share', 'sm'), h('span', { text: 'Share' })));
+}
+
+// Brings a freshly drawn inline result into view when it starts below the fold (or under the FAB).
+export function scrollToResult(el) {
+  if (el.getBoundingClientRect().top > window.innerHeight - 110) {
+    el.scrollIntoView({ block: 'nearest', behavior: motionOn() ? 'smooth' : 'auto' });
+  }
+}
+
+export const capHistory = (text) => (text.length > 1000 ? text.slice(0, 999) + '…' : text);

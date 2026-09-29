@@ -2,6 +2,9 @@
 // Top-level code must not touch the DOM (node tests and the build import this file).
 import { getState, update } from './store.js';
 import { beforeMount, currentPath } from './router.js';
+import { SCHEMAS, CONFIG_DEFAULTS, cleanConfig, extractConfig, applyConfig } from './tools.js';
+
+const TOOL_PRESETS = ['dice', 'lots', 'lottery', 'cards'];
 
 const BOUND = 1e9;
 const isBoundedInt = (v) => Number.isInteger(v) && Math.abs(v) <= BOUND;
@@ -31,6 +34,19 @@ export function parsePreset(json) {
       const clean = items.map((i) => i.trim()).filter(Boolean).map((i) => i.slice(0, 200)).slice(0, 500);
       return { list: { id, name: name.trim().slice(0, 60), items: clean } };
     }
+
+    // Tool shapes: exactly one top-level key, a partial config with schema keys only.
+    const keys = Object.keys(raw);
+    if (keys.length === 1 && TOOL_PRESETS.includes(keys[0])) {
+      const tool = keys[0];
+      const partial = raw[tool];
+      if (!partial || typeof partial !== 'object' || Array.isArray(partial)) return null;
+      const known = new Set(SCHEMAS[tool].map((f) => f[0]));
+      if (!Object.keys(partial).every((k) => known.has(k))) return null;
+      const cleaned = cleanConfig(tool, { ...CONFIG_DEFAULTS[tool], ...partial });
+      if (!cleaned) return null;
+      return { [tool]: Object.fromEntries(Object.keys(partial).map((k) => [k, cleaned[k]])) };
+    }
     return null;
   } catch {
     return null;
@@ -59,6 +75,11 @@ export function applyPreset() {
     if (!getState().lists.some((l) => l.id === id)) {
       update((s) => { s.lists.push({ id, name, items, noRepeat: false, drawn: [], pickCount: 1 }); });
     }
+  } else {
+    const tool = Object.keys(preset)[0];
+    const st = getState()[tool];
+    const next = { ...extractConfig(tool, st), ...preset[tool] };
+    if (Object.keys(preset[tool]).some((k) => st[k] !== next[k])) update((s) => { applyConfig(tool, s[tool], next); });
   }
 }
 

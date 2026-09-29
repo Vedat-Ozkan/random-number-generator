@@ -4,15 +4,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Dice Roller: Roll 1 to 6 Dice Online</title>
-<meta name="description" content="Roll 1 to 6 dice online and see the total instantly, with a rolling animation and your last 20 rolls. Free and works offline.">
+<title>Dice Roller: Roll Any Dice Online (d4 to d100, 2d6+3)</title>
+<meta name="description" content="Roll up to 12 dice online: d4, d6, d8, d10, d12, d20 or d100, with modifiers like 2d6+3 and an instant total. Free and works offline.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Random">
-<meta property="og:title" content="Dice Roller: Roll 1 to 6 Dice Online">
-<meta property="og:description" content="Roll 1 to 6 dice online and see the total instantly, with a rolling animation and your last 20 rolls. Free and works offline.">
+<meta property="og:title" content="Dice Roller: Roll Any Dice Online (d4 to d100, 2d6+3)">
+<meta property="og:description" content="Roll up to 12 dice online: d4, d6, d8, d10, d12, d20 or d100, with modifiers like 2d6+3 and an instant total. Free and works offline.">
 <meta name="twitter:card" content="summary">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Dice roller","description":"Roll 1 to 6 dice online and see the total instantly, with a rolling animation and your last 20 rolls. Free and works offline.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Can I roll a d20 or other dice?","acceptedAnswer":{"@type":"Answer","text":"This roller uses six-sided dice. For a d20, use the random number generator with a range of 1 to 20."}},{"@type":"Question","name":"How do I see previous rolls?","acceptedAnswer":{"@type":"Answer","text":"Tap the clock icon to see your last 20 rolls with totals."}}]}]}</script>
-<meta name="theme-color" content="#0F1416">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Dice roller","description":"Roll up to 12 dice online: d4, d6, d8, d10, d12, d20 or d100, with modifiers like 2d6+3 and an instant total. Free and works offline.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Can I roll a d20?","acceptedAnswer":{"@type":"Answer","text":"Yes. Choose d20 in Parameters or type d20. There is also a dedicated d20 page."}},{"@type":"Question","name":"What does 2d6+3 mean?","acceptedAnswer":{"@type":"Answer","text":"Roll two six-sided dice, add them up, then add 3. The roller shows each die and the final total."}},{"@type":"Question","name":"How do I see previous rolls?","acceptedAnswer":{"@type":"Answer","text":"Tap the clock icon to see your last 20 rolls with totals."}}]}]}</script>
+<meta name="theme-color" content="#0B0B0C">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="../icons/icon-192.png" sizes="192x192" type="image/png">
@@ -62,6 +62,16 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <link rel="modulepreload" href="../js/config.js">
 <link rel="modulepreload" href="../js/site.js">
 <link rel="modulepreload" href="../js/ads.js">
+<link rel="modulepreload" href="../js/tools.js">
+<link rel="modulepreload" href="../js/parse.js">
+<link rel="modulepreload" href="../js/search.js">
+<link rel="modulepreload" href="../js/presets.js">
+<link rel="modulepreload" href="../js/screens/source.js">
+<link rel="modulepreload" href="../js/screens/teams.js">
+<link rel="modulepreload" href="../js/screens/shuffle.js">
+<link rel="modulepreload" href="../js/screens/wheel.js">
+<link rel="modulepreload" href="../js/screens/lottery.js">
+<link rel="modulepreload" href="../js/screens/cards.js">
 <script type="module" src="../js/app.js"></script>
 </head>
 <body>
@@ -69,23 +79,56 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <div id="below" class="below">
 
 <article class="about"><h1>Dice roller</h1>
-<p>Choose how many dice to roll with the − and + buttons, from 1 to 6, then tap the dice or the roll button. With more than one die, the total is shown under the dice.</p>
-<p>Use it for board games when the dice go missing, dice games or any quick d6 roll. Each die is rolled independently, and every face has an equal 1 in 6 chance.</p>
+<p>Choose how many dice to roll, from 1 to 12, and pick the type in Parameters: d4, d6, d8, d10, d12, d20 or d100. You can also type dice notation such as 2d6+3 or d20-1, and the total includes the modifier.</p>
+<p>Six-sided dice show classic pips, and other dice show their number. Each die is rolled independently with an equal chance for every face, and the history keeps your last 20 rolls with the full breakdown.</p>
 <h2>Questions</h2>
-<h3>Can I roll a d20 or other dice?</h3>
-<p>This roller uses six-sided dice. For a d20, use the random number generator with a range of 1 to 20.</p>
+<h3>Can I roll a d20?</h3>
+<p>Yes. Choose d20 in Parameters or type d20. There is also a dedicated d20 page.</p>
+<h3>What does 2d6+3 mean?</h3>
+<p>Roll two six-sided dice, add them up, then add 3. The roller shows each die and the final total.</p>
 <h3>How do I see previous rolls?</h3>
 <p>Tap the clock icon to see your last 20 rolls with totals.</p></article>
-<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2><ul>
+<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2>
+<h3>Numbers</h3>
+<ul>
 <li><a href="../random-number-generator/">Random number generator</a></li>
+<li><a href="../random-number-1-6/">Random number 1–6</a></li>
 <li><a href="../random-number-1-10/">Random number 1–10</a></li>
+<li><a href="../random-number-1-50/">Random number 1–50</a></li>
 <li><a href="../random-number-1-100/">Random number 1–100</a></li>
+<li><a href="../random-number-1-1000/">Random number 1–1000</a></li>
+<li><a href="../lottery-number-generator/">Lottery numbers</a></li>
+</ul>
+<h3>Dice, coins &amp; cards</h3>
+<ul>
+<li><a href="../d4-dice-roller/">D4 roller</a></li>
+<li><a href="../d6-dice-roller/">D6 roller</a></li>
+<li><a href="../d8-dice-roller/">D8 roller</a></li>
+<li><a href="../d10-dice-roller/">D10 roller</a></li>
+<li><a href="../d12-dice-roller/">D12 roller</a></li>
+<li><a href="../d20-dice-roller/">D20 roller</a></li>
 <li><a href="../coin-flip/">Coin flip</a></li>
+<li><a href="../draw-a-card/">Draw a card</a></li>
+</ul>
+<h3>Lists, names &amp; teams</h3>
+<ul>
 <li><a href="../random-name-picker/">Random name picker</a></li>
+<li><a href="../team-generator/">Team generator</a></li>
+<li><a href="../shuffle-list/">Shuffle a list</a></li>
+<li><a href="../spin-the-wheel/">Spin the wheel</a></li>
 <li><a href="../draw-lots/">Draw lots</a></li>
+</ul>
+<h3>Answers &amp; picks</h3>
+<ul>
 <li><a href="../yes-or-no/">Yes or no</a></li>
-<li><a href="../">All tools</a></li>
-</ul></nav>
+<li><a href="../magic-8-ball/">Magic 8-ball</a></li>
+<li><a href="../rock-paper-scissors/">Rock paper scissors</a></li>
+<li><a href="../random-letter-generator/">Random letter</a></li>
+<li><a href="../random-month-generator/">Random month</a></li>
+<li><a href="../random-day-of-the-week/">Random weekday</a></li>
+</ul>
+<ul><li><a href="../">All tools</a></li></ul>
+</nav>
 <footer class="site-footer"><a href="../">Home</a> · <a href="../privacy/">Privacy</a></footer>
 </div>
 <div id="live" class="sr-only" aria-live="polite"></div>

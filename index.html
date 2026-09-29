@@ -5,14 +5,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Random: Number Generator, Coin Flip, Dice &amp; Name Picker</title>
-<meta name="description" content="Free random tools in one fast app: pick a number, flip a coin, roll dice, pick names from a list or draw lots. Works offline, no sign-up.">
+<meta name="description" content="Free random tools in one app: numbers, dice, coin flip, name picker, spinning wheel, teams, lottery numbers and cards. Works offline.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Random">
 <meta property="og:title" content="Random: Number Generator, Coin Flip, Dice &amp; Name Picker">
-<meta property="og:description" content="Free random tools in one fast app: pick a number, flip a coin, roll dice, pick names from a list or draw lots. Works offline, no sign-up.">
+<meta property="og:description" content="Free random tools in one app: numbers, dice, coin flip, name picker, spinning wheel, teams, lottery numbers and cards. Works offline.">
 <meta name="twitter:card" content="summary">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Random","description":"Free random tools in one fast app: pick a number, flip a coin, roll dice, pick names from a list or draw lots. Works offline, no sign-up.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is it really random?","acceptedAnswer":{"@type":"Answer","text":"It uses crypto.getRandomValues, the same secure generator browsers use for encryption keys. Rejection sampling removes the small bias that simpler methods have, so every allowed result is equally likely."}},{"@type":"Question","name":"Does it work offline?","acceptedAnswer":{"@type":"Answer","text":"Yes. After your first visit the whole app is stored on your device. To install it, use your browser's Install app or Add to Home Screen option."}},{"@type":"Question","name":"Where is my data stored?","acceptedAnswer":{"@type":"Answer","text":"Your lists, settings and history are saved only in your browser's local storage on this device. Nothing you enter is uploaded."}}]}]}</script>
-<meta name="theme-color" content="#0F1416">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Random","description":"Free random tools in one app: numbers, dice, coin flip, name picker, spinning wheel, teams, lottery numbers and cards. Works offline.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is it really random?","acceptedAnswer":{"@type":"Answer","text":"It uses crypto.getRandomValues, the same secure generator browsers use for encryption keys. Rejection sampling removes the small bias that simpler methods have, so every allowed result is equally likely."}},{"@type":"Question","name":"Does it work offline?","acceptedAnswer":{"@type":"Answer","text":"Yes. After your first visit the whole app is stored on your device. To install it, use your browser's Install app or Add to Home Screen option."}},{"@type":"Question","name":"Where is my data stored?","acceptedAnswer":{"@type":"Answer","text":"Your lists, settings and history are saved only in your browser's local storage on this device. Nothing you enter is uploaded."}},{"@type":"Question","name":"Can I save my favourite settings?","acceptedAnswer":{"@type":"Answer","text":"Yes. Set up any tool, open the ⋮ menu and choose Save as preset. Your presets appear on the home screen under their tool, and search finds them instantly."}}]}]}</script>
+<meta name="theme-color" content="#0B0B0C">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/icon-192.png" sizes="192x192" type="image/png">
@@ -62,6 +62,16 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <link rel="modulepreload" href="js/config.js">
 <link rel="modulepreload" href="js/site.js">
 <link rel="modulepreload" href="js/ads.js">
+<link rel="modulepreload" href="js/tools.js">
+<link rel="modulepreload" href="js/parse.js">
+<link rel="modulepreload" href="js/search.js">
+<link rel="modulepreload" href="js/presets.js">
+<link rel="modulepreload" href="js/screens/source.js">
+<link rel="modulepreload" href="js/screens/teams.js">
+<link rel="modulepreload" href="js/screens/shuffle.js">
+<link rel="modulepreload" href="js/screens/wheel.js">
+<link rel="modulepreload" href="js/screens/lottery.js">
+<link rel="modulepreload" href="js/screens/cards.js">
 <script type="module" src="js/app.js"></script>
 </head>
 <body>
@@ -69,35 +79,100 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <div id="below" class="below">
 
 <article class="about"><h1>Random: simple, fair random tools</h1>
-<p>Random is a small, fast app for everyday random choices: pick a number in any range, choose a name from a list, roll up to six dice, flip a coin or draw lots. It runs in your browser, works offline after the first visit and can be installed to your home screen like an app.</p>
+<p>Random is a small, fast app for everyday random choices: pick a number, roll any dice, flip a coin, choose names from a list, split people into teams, spin a wheel, draw lottery numbers or playing cards. It runs in your browser, works offline after the first visit and can be installed to your home screen.</p>
 <p>Every result comes from your device&#39;s cryptographically secure random number generator, with rejection sampling so that no outcome is more likely than another.</p>
+<div class="tool-groups">
+<h2>All tools</h2>
+<h3>Numbers</h3>
 <ul class="tool-links">
 <li><a href="random-number-generator/">Random number generator</a> Pick numbers in any range, with No repeat.</li>
+<li><a href="random-number-1-6/">Random number 1–6</a> A random number from 1 to 6.</li>
 <li><a href="random-number-1-10/">Random number 1–10</a> A random number from 1 to 10.</li>
+<li><a href="random-number-1-50/">Random number 1–50</a> A random number from 1 to 50.</li>
 <li><a href="random-number-1-100/">Random number 1–100</a> A random number from 1 to 100.</li>
-<li><a href="coin-flip/">Coin flip</a> Fair heads or tails with a 3D flip and a tally.</li>
-<li><a href="dice-roller/">Dice roller</a> Roll 1 to 6 dice and see the total.</li>
-<li><a href="random-name-picker/">Random name picker</a> Pick names from your own list.</li>
-<li><a href="draw-lots/">Draw lots</a> Draw straws: reveal winners one by one.</li>
-<li><a href="yes-or-no/">Yes or no</a> A random yes or no answer.</li>
+<li><a href="random-number-1-1000/">Random number 1–1000</a> A random number from 1 to 1000.</li>
+<li><a href="lottery-number-generator/">Lottery numbers</a> Quick picks for 6/49, 5/69 + 1/26 and more.</li>
 </ul>
+<h3>Dice, coins &amp; cards</h3>
+<ul class="tool-links">
+<li><a href="dice-roller/">Dice roller</a> Roll 1 to 12 dice, any type, with modifiers.</li>
+<li><a href="d4-dice-roller/">D4 roller</a> Roll a four-sided die.</li>
+<li><a href="d6-dice-roller/">D6 roller</a> Roll a classic six-sided die.</li>
+<li><a href="d8-dice-roller/">D8 roller</a> Roll an eight-sided die.</li>
+<li><a href="d10-dice-roller/">D10 roller</a> Roll a ten-sided die.</li>
+<li><a href="d12-dice-roller/">D12 roller</a> Roll a twelve-sided die.</li>
+<li><a href="d20-dice-roller/">D20 roller</a> Roll a twenty-sided die.</li>
+<li><a href="coin-flip/">Coin flip</a> Fair heads or tails with a 3D flip and stats.</li>
+<li><a href="draw-a-card/">Draw a card</a> Draw playing cards from a shuffled deck.</li>
+</ul>
+<h3>Lists, names &amp; teams</h3>
+<ul class="tool-links">
+<li><a href="random-name-picker/">Random name picker</a> Pick names from your own list.</li>
+<li><a href="team-generator/">Team generator</a> Split names into balanced random teams.</li>
+<li><a href="shuffle-list/">Shuffle a list</a> Put any list in random order.</li>
+<li><a href="spin-the-wheel/">Spin the wheel</a> A wheel of names or choices with weighted slices.</li>
+<li><a href="draw-lots/">Draw lots</a> Draw straws: reveal winners one by one.</li>
+</ul>
+<h3>Answers &amp; picks</h3>
+<ul class="tool-links">
+<li><a href="yes-or-no/">Yes or no</a> A random yes or no answer.</li>
+<li><a href="magic-8-ball/">Magic 8-ball</a> Ask a question, get one of 20 classic answers.</li>
+<li><a href="rock-paper-scissors/">Rock paper scissors</a> Let the app throw a hand for you.</li>
+<li><a href="random-letter-generator/">Random letter</a> Pick a random letter from A to Z.</li>
+<li><a href="random-month-generator/">Random month</a> Pick a random month of the year.</li>
+<li><a href="random-day-of-the-week/">Random weekday</a> Pick a random day of the week.</li>
+</ul>
+</div>
 <h2>Questions</h2>
 <h3>Is it really random?</h3>
 <p>It uses crypto.getRandomValues, the same secure generator browsers use for encryption keys. Rejection sampling removes the small bias that simpler methods have, so every allowed result is equally likely.</p>
 <h3>Does it work offline?</h3>
 <p>Yes. After your first visit the whole app is stored on your device. To install it, use your browser&#39;s Install app or Add to Home Screen option.</p>
 <h3>Where is my data stored?</h3>
-<p>Your lists, settings and history are saved only in your browser&#39;s local storage on this device. Nothing you enter is uploaded.</p></article>
-<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2><ul>
+<p>Your lists, settings and history are saved only in your browser&#39;s local storage on this device. Nothing you enter is uploaded.</p>
+<h3>Can I save my favourite settings?</h3>
+<p>Yes. Set up any tool, open the ⋮ menu and choose Save as preset. Your presets appear on the home screen under their tool, and search finds them instantly.</p></article>
+<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2>
+<h3>Numbers</h3>
+<ul>
 <li><a href="random-number-generator/">Random number generator</a></li>
+<li><a href="random-number-1-6/">Random number 1–6</a></li>
 <li><a href="random-number-1-10/">Random number 1–10</a></li>
+<li><a href="random-number-1-50/">Random number 1–50</a></li>
 <li><a href="random-number-1-100/">Random number 1–100</a></li>
-<li><a href="coin-flip/">Coin flip</a></li>
+<li><a href="random-number-1-1000/">Random number 1–1000</a></li>
+<li><a href="lottery-number-generator/">Lottery numbers</a></li>
+</ul>
+<h3>Dice, coins &amp; cards</h3>
+<ul>
 <li><a href="dice-roller/">Dice roller</a></li>
+<li><a href="d4-dice-roller/">D4 roller</a></li>
+<li><a href="d6-dice-roller/">D6 roller</a></li>
+<li><a href="d8-dice-roller/">D8 roller</a></li>
+<li><a href="d10-dice-roller/">D10 roller</a></li>
+<li><a href="d12-dice-roller/">D12 roller</a></li>
+<li><a href="d20-dice-roller/">D20 roller</a></li>
+<li><a href="coin-flip/">Coin flip</a></li>
+<li><a href="draw-a-card/">Draw a card</a></li>
+</ul>
+<h3>Lists, names &amp; teams</h3>
+<ul>
 <li><a href="random-name-picker/">Random name picker</a></li>
+<li><a href="team-generator/">Team generator</a></li>
+<li><a href="shuffle-list/">Shuffle a list</a></li>
+<li><a href="spin-the-wheel/">Spin the wheel</a></li>
 <li><a href="draw-lots/">Draw lots</a></li>
+</ul>
+<h3>Answers &amp; picks</h3>
+<ul>
 <li><a href="yes-or-no/">Yes or no</a></li>
-</ul></nav>
+<li><a href="magic-8-ball/">Magic 8-ball</a></li>
+<li><a href="rock-paper-scissors/">Rock paper scissors</a></li>
+<li><a href="random-letter-generator/">Random letter</a></li>
+<li><a href="random-month-generator/">Random month</a></li>
+<li><a href="random-day-of-the-week/">Random weekday</a></li>
+</ul>
+</nav>
 <footer class="site-footer"><a href="">Home</a> · <a href="privacy/">Privacy</a></footer>
 </div>
 <div id="live" class="sr-only" aria-live="polite"></div>

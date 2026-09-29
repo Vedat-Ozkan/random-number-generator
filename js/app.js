@@ -1,6 +1,6 @@
 // Bootstrap: theme, motion, router, keyboard, service worker.
 import { getState, subscribe, setSaveErrorHandler } from './store.js';
-import { startRouter, getPrimaryAction } from './router.js';
+import { startRouter, getPrimaryAction, beforeMount } from './router.js';
 import { getEntry, applyPreset, initBelow } from './site.js';
 import { initAds } from './ads.js';
 import { toast, isMenuOpen, closeMenu, isResultOpen, closeResult } from './ui.js';
@@ -11,19 +11,37 @@ import * as listEdit from './screens/list-edit.js';
 import * as dice from './screens/dice.js';
 import * as coin from './screens/coin.js';
 import * as lots from './screens/lots.js';
+import * as teams from './screens/teams.js';
+import * as shuffle from './screens/shuffle.js';
+import * as wheel from './screens/wheel.js';
+import * as lottery from './screens/lottery.js';
+import * as cards from './screens/cards.js';
 import * as settings from './screens/settings.js';
 
-export const VERSION = '2.0.0';
+export const VERSION = '3.0.0';
 
 const ROUTES = [
   { path: '/', screen: home },
   { path: '/number', screen: number },
+  { path: '/number/p/:id', screen: number },
   { path: '/list/new', screen: listEdit },
   { path: '/list/:id/edit', screen: listEdit },
   { path: '/list/:id', screen: list },
   { path: '/dice', screen: dice },
+  { path: '/dice/p/:id', screen: dice },
   { path: '/coin', screen: coin },
   { path: '/lots', screen: lots },
+  { path: '/lots/p/:id', screen: lots },
+  { path: '/teams', screen: teams },
+  { path: '/teams/p/:id', screen: teams },
+  { path: '/shuffle', screen: shuffle },
+  { path: '/shuffle/p/:id', screen: shuffle },
+  { path: '/wheel', screen: wheel },
+  { path: '/wheel/p/:id', screen: wheel },
+  { path: '/lottery', screen: lottery },
+  { path: '/lottery/p/:id', screen: lottery },
+  { path: '/cards', screen: cards },
+  { path: '/cards/p/:id', screen: cards },
   { path: '/settings', screen: settings },
 ];
 
@@ -36,7 +54,7 @@ function applyTheme() {
   const html = document.documentElement;
   html.dataset.theme = theme;
   const bg = getComputedStyle(html).getPropertyValue('--bg').trim();
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg || '#0F1416');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg || '#0B0B0C');
 }
 
 function applyMotion() {
@@ -51,6 +69,11 @@ motionQuery.addEventListener('change', applyMotion);
 subscribe(applyAll);
 setSaveErrorHandler(() => toast('Storage full — data not saved'));
 applyAll();
+
+// Top bar hairline appears once the page has scrolled.
+const html = document.documentElement;
+window.addEventListener('scroll', () => html.toggleAttribute('data-scrolled', window.scrollY > 4), { passive: true });
+beforeMount(() => html.removeAttribute('data-scrolled'));
 
 applyPreset();
 initBelow();

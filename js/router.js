@@ -19,6 +19,14 @@ export function replace(hash) {
   location.replace(hash);
 }
 
+export const hashQuery = () => new URLSearchParams(location.hash.split('?')[1] || '');
+
+// Drops ?query from the hash without firing hashchange or touching history depth.
+export function stripHashQuery() {
+  if (!location.hash.includes('?')) return;
+  history.replaceState(history.state, '', '#' + currentPath());
+}
+
 export const navDepth = () => depth;
 
 export function back() {
@@ -67,6 +75,8 @@ function mount() {
   window.scrollTo(0, 0);
   root.querySelector('h1')?.focus({ preventScroll: true });
 }
+
+export function remount() { mount(); }
 
 export function startRouter(mountEl, routeTable, defaultRoute = '/') {
   root = mountEl;

@@ -26,8 +26,9 @@ const { SITE_URL, ADSENSE_CLIENT, ADS_ON, TIP_URL, TIP_LABEL, GSC_TOKEN } = cfg;
 console.log(`SITE_URL: ${SITE_URL || 'off'} | ADSENSE: ${ADS_ON ? 'on' : ADSENSE_CLIENT ? 'client only (no slot)' : 'off'} | TIP_URL: ${TIP_URL || 'off'} | GSC: ${GSC_TOKEN ? 'on' : 'off'}`);
 
 /* ---------- 2. data, template, validation ---------- */
-const { PAGES, SITE_NAME, ADS_PRIVACY } = await import(pathToFileURL(at('tools/pages-data.mjs')).href);
+const { PAGES, GROUPS, SITE_NAME, ADS_PRIVACY } = await import(pathToFileURL(at('tools/pages-data.mjs')).href);
 const { parsePreset } = await import(pathToFileURL(at('js/site.js')).href);
+const groupIds = new Set(GROUPS.map(([id]) => id));
 const template = read('tools/page-template.html');
 
 const seen = { slug: new Set(), title: new Set(), description: new Set() };
@@ -45,10 +46,17 @@ for (const p of PAGES) {
     if (!p.h1) fail(`no h1: ${p.slug}`);
     if (!p.intro || p.intro.length < 2) fail(`needs 2+ intro paragraphs: ${p.slug || 'home'}`);
     if (!p.faq || p.faq.length < 2) fail(`needs 2+ FAQs: ${p.slug || 'home'}`);
+    if (p.slug) {
+      if (!p.nav) fail(`no nav: ${p.slug}`);
+      if (!p.blurb) fail(`no blurb: ${p.slug}`);
+      if (!groupIds.has(p.group)) fail(`missing or invalid group: ${p.slug}`);
+    }
   }
   if (p.preset) {
     if (!parsePreset(p.preset)) fail(`invalid preset: ${p.slug}`);
     if (p.preset.list && p.entry !== `/list/${p.preset.list.id}`) fail(`list preset entry mismatch: ${p.slug}`);
+    const presetTool = Object.keys(p.preset)[0];
+    if (!['number', 'list'].includes(presetTool) && p.entry !== '/' + presetTool) fail(`tool preset entry mismatch: ${p.slug}`);
   }
 }
 if (errors.length) { errors.forEach((e) => console.error('error:', e)); process.exit(1); }
@@ -92,7 +100,7 @@ function seoMeta(p) {
     l.push(`<meta property="og:url" content="${esc(canon)}">`);
     l.push(`<meta property="og:image" content="${esc(SITE_URL + 'og.png')}">`);
     l.push('<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">');
-    l.push('<meta property="og:image:alt" content="Random: number, list, dice, coin and lots tools">');
+    l.push('<meta property="og:image:alt" content="Random: number, dice, coin, list, wheel and team tools">');
   }
   l.push(`<meta name="twitter:card" content="${SITE_URL ? 'summary_large_image' : 'summary'}">`);
   if (ADSENSE_CLIENT) l.push(`<meta name="google-adsense-account" content="${esc(ADSENSE_CLIENT)}">`);
@@ -106,9 +114,15 @@ function article(p, base) {
   p.intro.forEach((t) => out.push(`<p>${esc(t)}</p>`));
   if (!p.tool && ADSENSE_CLIENT) out.push(`<p>${linkify(ADS_PRIVACY)}</p>`);
   if (p.toolList) {
-    out.push('<ul class="tool-links">');
-    PAGES.filter((x) => x.tool && x.slug).forEach((x) => out.push(`<li><a href="${pageHref(base, x)}">${esc(x.nav)}</a> ${esc(x.blurb)}</li>`));
-    out.push('</ul>');
+    out.push('<div class="tool-groups">', '<h2>All tools</h2>');
+    for (const [id, label] of GROUPS) {
+      const pages = PAGES.filter((x) => x.tool && x.slug && x.group === id);
+      if (!pages.length) continue;
+      out.push(`<h3>${esc(label)}</h3>`, '<ul class="tool-links">');
+      pages.forEach((x) => out.push(`<li><a href="${pageHref(base, x)}">${esc(x.nav)}</a> ${esc(x.blurb)}</li>`));
+      out.push('</ul>');
+    }
+    out.push('</div>');
   }
   if (p.faq.length) {
     out.push('<h2>Questions</h2>');
@@ -119,9 +133,15 @@ function article(p, base) {
 
 function nav(p, base) {
   if (!p.tool) return '';
-  const items = PAGES.filter((x) => x.tool && x.slug && x !== p).map((x) => `<li><a href="${pageHref(base, x)}">${esc(x.nav)}</a></li>`);
-  if (p.slug) items.push(`<li><a href="${base}">All tools</a></li>`);
-  return `<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2><ul>\n${items.join('\n')}\n</ul></nav>`;
+  const parts = ['<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2>'];
+  for (const [id, label] of GROUPS) {
+    const items = PAGES.filter((x) => x.tool && x.slug && x.group === id && x !== p)
+      .map((x) => `<li><a href="${pageHref(base, x)}">${esc(x.nav)}</a></li>`);
+    if (items.length) parts.push(`<h3>${esc(label)}</h3>`, `<ul>\n${items.join('\n')}\n</ul>`);
+  }
+  if (p.slug) parts.push(`<ul><li><a href="${base}">All tools</a></li></ul>`);
+  parts.push('</nav>');
+  return parts.join('\n');
 }
 
 function footer(base) {

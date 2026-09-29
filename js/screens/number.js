@@ -1,16 +1,23 @@
-import { h, topBar, historyButton, soundToggle, fab, paramsPill, noRepeatCard, openSheet, stepper, switchRow, showResult, toast } from '../ui.js';
+import { h, topBar, fab, paramsPill, noRepeatCard, openSheet, stepper, switchRow, showResult, toast } from '../ui.js';
 import { getState, update, addHistory } from '../store.js';
 import { draw } from '../rng.js';
 import { click, vibrate } from '../feedback.js';
 import { setPrimaryAction } from '../router.js';
-import { openHistorySheet } from './history.js';
+import { initTool, toolChrome, share } from '../presets.js';
 
 const LIMIT = 1e9;
 const MAX_POOL = 100000;
 const num = () => getState().number;
 const total = () => Math.abs(num().to - num().from) + 1;
 
-export function render(root) {
+export function render(root, params = {}) {
+  const init = initTool('number', params);
+  if (!init) return;
+  let lastText = '';
+  const chrome = toolChrome({
+    tool: 'number', preset: init.preset, title: 'Number', historyKey: 'number',
+    shareText: () => (lastText ? `Number ${num().from}–${num().to}: ${lastText}` : ''),
+  });
   const inputs = {};
 
   function bigInput(which, label) {
@@ -98,7 +105,11 @@ export function render(root) {
     click();
     vibrate(15);
     addHistory('number', texts.join(', '));
-    showResult({ values: texts, onAgain: generate, returnFocus: fabEl });
+    lastText = texts.join(', ');
+    showResult({
+      values: texts, caption: init.preset ? chrome.title : 'Number', onAgain: generate,
+      onShare: () => share('number', () => `Number ${num().from}–${num().to}: ${lastText}`, init.preset), returnFocus: fabEl,
+    });
   }
 
   function openParams() {
@@ -127,12 +138,15 @@ export function render(root) {
   const fabEl = fab({ label: 'Generate', onClick: generate });
 
   root.append(
-    topBar({ title: 'Number', actions: [historyButton(() => openHistorySheet('number', 'Number')), soundToggle()] }),
+    topBar({ title: chrome.title, actions: chrome.actions }),
     h('div', { class: 'content' },
+      chrome.bar,
       h('div', { class: 'center-area' }, bigInput('from', 'From'), bigInput('to', 'To')),
       pool.el,
       paramsPill(openParams)),
     fabEl);
   refresh();
   setPrimaryAction(generate);
+  if (init.edit) requestAnimationFrame(openParams);
+  return chrome.cleanup;
 }

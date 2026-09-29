@@ -1,11 +1,15 @@
-import { h, icon, topBar, historyButton, soundToggle, fab, paramsPill, openSheet, stepper, motionOn } from '../ui.js';
+import { h, icon, topBar, fab, paramsPill, openSheet, stepper, motionOn } from '../ui.js';
 import { getState, update, addHistory } from '../store.js';
 import { sampleDistinct } from '../rng.js';
 import { click, vibrate } from '../feedback.js';
 import { setPrimaryAction } from '../router.js';
-import { openHistorySheet } from './history.js';
+import { initTool, toolChrome } from '../presets.js';
 
-export function render(root) {
+export function render(root, params = {}) {
+  const init = initTool('lots', params);
+  if (!init) return;
+  let lastLine = '';
+  const chrome = toolChrome({ tool: 'lots', preset: init.preset, title: 'Cast lots', historyKey: 'lots', shareText: () => lastLine });
   let winners = new Set();
   let revealed = new Set();
   let timer = 0;
@@ -38,7 +42,8 @@ export function render(root) {
     btn.setAttribute('aria-label', `Lot ${i + 1}, ${win ? 'winner' : 'blank'}`);
     click();
     vibrate(win ? [30, 40, 30] : 15);
-    addHistory('lots', `Lot ${i + 1}: ${win ? 'winner' : 'blank'}`);
+    lastLine = `Lot ${i + 1}: ${win ? 'winner' : 'blank'}`;
+    addHistory('lots', lastLine);
     paintStatus();
   }
 
@@ -87,10 +92,11 @@ export function render(root) {
   }
 
   root.append(
-    topBar({ title: 'Cast lots', actions: [historyButton(() => openHistorySheet('lots', 'Cast lots')), soundToggle()] }),
-    h('div', { class: 'content' }, status, grid, paramsPill(openParams)),
+    topBar({ title: chrome.title, actions: chrome.actions }),
+    h('div', { class: 'content' }, chrome.bar, status, grid, paramsPill(openParams)),
     fab({ label: 'New round', onClick: newRound }));
   resetRound();
   setPrimaryAction(newRound);
-  return () => clearTimeout(timer);
+  if (init.edit) requestAnimationFrame(openParams);
+  return () => { clearTimeout(timer); chrome.cleanup(); };
 }

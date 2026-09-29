@@ -1,12 +1,14 @@
 import { h, topBar, historyButton, soundToggle, iconButton, fab, paramsPill, noRepeatCard, openSheet, stepper, showResult, toast, openMenu, confirmDialog } from '../ui.js';
-import { getState, update, addHistory, deleteList } from '../store.js';
-import { draw } from '../rng.js';
+import { getState, update, addHistory, deleteList, ensureBuiltinList } from '../store.js';
+import { draw, drawWeighted } from '../rng.js';
+import { parseWeighted } from '../parse.js';
+import { shareList } from '../presets.js';
 import { click, vibrate } from '../feedback.js';
 import { setPrimaryAction, replace } from '../router.js';
 import { openHistorySheet } from './history.js';
 
 export function render(root, { id }) {
-  const find = () => getState().lists.find((l) => l.id === id);
+  const find = () => getState().lists.find((l) => l.id === id) || ensureBuiltinList(id);
   if (!find()) {
     toast('List not found');
     replace('#/');
@@ -24,10 +26,12 @@ export function render(root, { id }) {
     if (!l) return;
     if (!l.items.length) { itemsBox.replaceChildren(emptyBox); return; }
     const drawn = new Set(l.noRepeat ? l.drawn : []);
-    itemsBox.replaceChildren(...l.items.map((t, i) => h('div', {
-      class: 'item' + (picked.has(i) ? ' picked' : '') + (drawn.has(i) ? ' drawn' : ''),
-      text: t,
-    })));
+    itemsBox.replaceChildren(...l.items.map((raw, i) => {
+      const { text, weight } = parseWeighted(raw);
+      return h('div', { class: 'item' + (picked.has(i) ? ' picked' : '') + (drawn.has(i) ? ' drawn' : '') },
+        h('span', { class: 'item-text', text }),
+        weight > 1 ? h('span', { class: 'weight-badge', attrs: { 'aria-label': `weight ${weight}` }, text: `\u00d7${weight}` }) : null);
+    }));
   }
 
   const pool = noRepeatCard({
@@ -52,19 +56,23 @@ export function render(root, { id }) {
     const l = find();
     const n = l.items.length;
     if (!n) { toast('Add items first'); return; }
-    const r = draw({
-      min: 0, max: n - 1, count: Math.min(l.pickCount, n, 20),
-      noRepeat: l.noRepeat, drawn: l.drawn, label: 'items',
-    });
+    const parsed = l.items.map(parseWeighted);
+    const count = Math.min(l.pickCount, n, 20);
+    const r = parsed.some((p) => p.weight > 1)
+      ? drawWeighted({ weights: parsed.map((p) => p.weight), count, noRepeat: l.noRepeat, drawn: l.drawn, label: 'items' })
+      : draw({ min: 0, max: n - 1, count, noRepeat: l.noRepeat, drawn: l.drawn, label: 'items' });
     update(() => { find().drawn = r.drawn; });
     picked = new Set(r.values);
     refresh();
     if (r.notes.length) toast(r.notes.join('. '));
-    const texts = r.values.map((i) => l.items[i]);
+    const texts = r.values.map((i) => parsed[i].text);
     click();
     vibrate(15);
     addHistory(`list:${id}`, texts.join(', '));
-    showResult({ values: texts, lines: true, onAgain: generate, returnFocus: fabEl });
+    showResult({
+      values: texts, lines: true, caption: l.name, onAgain: generate, returnFocus: fabEl,
+      onShare: () => shareList(l.name, l.items, `${l.name}: ${texts.join(', ')}`),
+    });
   }
 
   function openParams() {
@@ -85,6 +93,7 @@ export function render(root, { id }) {
     icon: 'more', label: 'List options',
     onClick: () => openMenu(menuBtn, [
       { label: 'Edit list', onClick: () => { location.hash = `#/list/${encodeURIComponent(id)}/edit`; } },
+      { label: 'Share list…', onClick: () => shareList(find().name, find().items) },
       {
         label: 'Delete list', danger: true,
         onClick: async () => {

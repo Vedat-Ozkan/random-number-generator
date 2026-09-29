@@ -8,13 +8,13 @@ const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'og.pn
 const W = 1200, H = 630, SS = 3;
 
 /* ---- icon geometry (copied from make-icons.mjs) ---- */
-const R = 120, HALF_W = 18, RAD = Math.PI / 180;
+const R = 120, HALF_W = 14, RAD = Math.PI / 180;
 const ARCS = [[200, 330], [20, 150]];
 function arrowTriangle(deg) {
   const t = deg * RAD;
   const px = 256 + R * Math.cos(t), py = 256 + R * Math.sin(t);
   const ux = Math.cos(t), uy = Math.sin(t), tx = -Math.sin(t), ty = Math.cos(t);
-  return [[px - 46 * ux, py - 46 * uy], [px + 46 * ux, py + 46 * uy], [px + 64 * tx, py + 64 * ty]];
+  return [[px - 38 * ux, py - 38 * uy], [px + 38 * ux, py + 38 * uy], [px + 56 * tx, py + 56 * ty]];
 }
 const TRIANGLES = [330, 150].map(arrowTriangle);
 const cross = (a, b, p) => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
@@ -23,14 +23,17 @@ function inTriangle(tri, x, y) {
   const s = [cross(tri[0], tri[1], p), cross(tri[1], tri[2], p), cross(tri[2], tri[0], p)];
   return s.every((v) => v >= 0) || s.every((v) => v <= 0);
 }
-function inGlyph(x, y) {
+// 0 = none, 1 = arc A (light), 2 = arc B (accent)
+function glyphPart(x, y) {
   const dx = x - 256, dy = y - 256, d = Math.hypot(dx, dy);
   if (d >= R - HALF_W && d <= R + HALF_W) {
     let a = Math.atan2(dy, dx) / RAD;
     a = ((a % 360) + 360) % 360;
-    if (ARCS.some(([s, e]) => a >= s && a <= e)) return true;
+    const i = ARCS.findIndex(([s, e]) => a >= s && a <= e);
+    if (i >= 0) return i + 1;
   }
-  return TRIANGLES.some((tri) => inTriangle(tri, x, y));
+  const t = TRIANGLES.findIndex((tri) => inTriangle(tri, x, y));
+  return t >= 0 ? t + 1 : 0;
 }
 
 /* ---- shapes ---- */
@@ -59,24 +62,27 @@ const CELLS = [];
 
 const hex = (s) => [1, 3, 5].map((i) => parseInt(s.slice(i, i + 2), 16));
 const C = {
-  bg: hex('#0F1416'), bar: hex('#00ACC1'), white: hex('#FFFFFF'), word: hex('#E1E8EA'),
-  die: hex('#7B1FA2'), coin: hex('#FFB300'), t1: hex('#1976D2'), t2: hex('#E64A19'),
+  bg: hex('#0B0B0C'), bar: hex('#8B93FF'), iconBg: hex('#111113'), light: hex('#F2F2F3'), accent: hex('#8B93FF'),
+  word: hex('#F2F2F3'), die: hex('#F2F2F3'), pip: hex('#0B0B0C'), coin: hex('#A1A1AA'), t1: hex('#8B93FF'), t2: hex('#26262A'),
 };
 const PIPS = [[27.5, 27.5], [82.5, 27.5], [55, 55], [27.5, 82.5], [82.5, 82.5]];
 
 function colorAt(x, y) {
   let c = C.bg;
-  if (y >= H - 8) c = C.bar;
+  if (y >= H - 4) c = C.bar;
   const s = 300 / 512;
   const gx = (x - 110) / s, gy = (y - 165) / s;
-  if (inRR(gx, gy, 0, 0, 512, 512, 112)) c = inGlyph(gx, gy) ? C.white : C.bar;
+  if (inRR(gx, gy, 0, 0, 512, 512, 112)) {
+    const part = glyphPart(gx, gy);
+    c = part === 1 ? C.light : part === 2 ? C.accent : C.iconBg;
+  }
   if (x >= 470 && x <= 1080 && y >= 190 && y <= 330) {
     for (const [cx, cy] of CELLS) if (inRR(x, y, cx, cy, 18, 18, 4)) { c = C.word; break; }
   }
   if (y >= 380 && y <= 490) {
     if (inRR(x, y, 470, 380, 110, 110, 24)) {
       c = C.die;
-      if (PIPS.some(([px, py]) => inCircle(x, y, 470 + px, 380 + py, 10))) c = C.white;
+      if (PIPS.some(([px, py]) => inCircle(x, y, 470 + px, 380 + py, 10))) c = C.pip;
     }
     if (inCircle(x, y, 665, 435, 55)) c = C.coin;
     if (inRR(x, y, 750, 380, 110, 110, 26)) c = C.t1;

@@ -12,7 +12,7 @@
 <meta property="og:description" content="Get a random number from 1 to 100 instantly. Draw several at once, or use No repeat for raffles and bingo without duplicates. Works offline.">
 <meta name="twitter:card" content="summary">
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Random number from 1 to 100","description":"Get a random number from 1 to 100 instantly. Draw several at once, or use No repeat for raffles and bingo without duplicates. Works offline.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Can I use it for a raffle?","acceptedAnswer":{"@type":"Answer","text":"Yes. Set To to your number of tickets, turn on No repeat and draw. History keeps the last 20 draws."}},{"@type":"Question","name":"How do I draw 5 different numbers?","acceptedAnswer":{"@type":"Answer","text":"Open Parameters and set How many numbers to 5. Duplicates are off by default, and Sort results puts them in order."}}]}]}</script>
-<meta name="theme-color" content="#0F1416">
+<meta name="theme-color" content="#0B0B0C">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="../icons/icon-192.png" sizes="192x192" type="image/png">
@@ -62,6 +62,16 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <link rel="modulepreload" href="../js/config.js">
 <link rel="modulepreload" href="../js/site.js">
 <link rel="modulepreload" href="../js/ads.js">
+<link rel="modulepreload" href="../js/tools.js">
+<link rel="modulepreload" href="../js/parse.js">
+<link rel="modulepreload" href="../js/search.js">
+<link rel="modulepreload" href="../js/presets.js">
+<link rel="modulepreload" href="../js/screens/source.js">
+<link rel="modulepreload" href="../js/screens/teams.js">
+<link rel="modulepreload" href="../js/screens/shuffle.js">
+<link rel="modulepreload" href="../js/screens/wheel.js">
+<link rel="modulepreload" href="../js/screens/lottery.js">
+<link rel="modulepreload" href="../js/screens/cards.js">
 <script type="module" src="../js/app.js"></script>
 </head>
 <body>
@@ -76,16 +86,47 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <p>Yes. Set To to your number of tickets, turn on No repeat and draw. History keeps the last 20 draws.</p>
 <h3>How do I draw 5 different numbers?</h3>
 <p>Open Parameters and set How many numbers to 5. Duplicates are off by default, and Sort results puts them in order.</p></article>
-<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2><ul>
+<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2>
+<h3>Numbers</h3>
+<ul>
 <li><a href="../random-number-generator/">Random number generator</a></li>
+<li><a href="../random-number-1-6/">Random number 1–6</a></li>
 <li><a href="../random-number-1-10/">Random number 1–10</a></li>
-<li><a href="../coin-flip/">Coin flip</a></li>
+<li><a href="../random-number-1-50/">Random number 1–50</a></li>
+<li><a href="../random-number-1-1000/">Random number 1–1000</a></li>
+<li><a href="../lottery-number-generator/">Lottery numbers</a></li>
+</ul>
+<h3>Dice, coins &amp; cards</h3>
+<ul>
 <li><a href="../dice-roller/">Dice roller</a></li>
+<li><a href="../d4-dice-roller/">D4 roller</a></li>
+<li><a href="../d6-dice-roller/">D6 roller</a></li>
+<li><a href="../d8-dice-roller/">D8 roller</a></li>
+<li><a href="../d10-dice-roller/">D10 roller</a></li>
+<li><a href="../d12-dice-roller/">D12 roller</a></li>
+<li><a href="../d20-dice-roller/">D20 roller</a></li>
+<li><a href="../coin-flip/">Coin flip</a></li>
+<li><a href="../draw-a-card/">Draw a card</a></li>
+</ul>
+<h3>Lists, names &amp; teams</h3>
+<ul>
 <li><a href="../random-name-picker/">Random name picker</a></li>
+<li><a href="../team-generator/">Team generator</a></li>
+<li><a href="../shuffle-list/">Shuffle a list</a></li>
+<li><a href="../spin-the-wheel/">Spin the wheel</a></li>
 <li><a href="../draw-lots/">Draw lots</a></li>
+</ul>
+<h3>Answers &amp; picks</h3>
+<ul>
 <li><a href="../yes-or-no/">Yes or no</a></li>
-<li><a href="../">All tools</a></li>
-</ul></nav>
+<li><a href="../magic-8-ball/">Magic 8-ball</a></li>
+<li><a href="../rock-paper-scissors/">Rock paper scissors</a></li>
+<li><a href="../random-letter-generator/">Random letter</a></li>
+<li><a href="../random-month-generator/">Random month</a></li>
+<li><a href="../random-day-of-the-week/">Random weekday</a></li>
+</ul>
+<ul><li><a href="../">All tools</a></li></ul>
+</nav>
 <footer class="site-footer"><a href="../">Home</a> · <a href="../privacy/">Privacy</a></footer>
 </div>
 <div id="live" class="sr-only" aria-live="polite"></div>

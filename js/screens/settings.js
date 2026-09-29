@@ -1,4 +1,4 @@
-import { h, icon, topBar, switchRow, confirmDialog, toast } from '../ui.js';
+import { h, icon, topBar, switchRow, confirmDialog, toast, segmented } from '../ui.js';
 import { ADS_ON, TIP_URL, TIP_LABEL } from '../config.js';
 import { isNoAds, setNoAds } from '../ads.js';
 import { getState, update, clearAll } from '../store.js';
@@ -9,29 +9,9 @@ const THEMES = [['system', 'System'], ['light', 'Light'], ['dark', 'Dark']];
 export function render(root) {
   const s = getState().settings;
 
-  const segButtons = THEMES.map(([value, label]) => h('button', {
-    class: 'seg', attrs: { type: 'button', role: 'radio', 'aria-checked': String(s.theme === value), tabindex: s.theme === value ? '0' : '-1' },
-    text: label,
-    on: { click: () => choose(value) },
-  }));
-  const seg = h('div', { class: 'segmented', attrs: { role: 'radiogroup', 'aria-label': 'Theme' } }, segButtons);
-
-  function choose(value) {
-    update((st) => { st.settings.theme = value; });
-    segButtons.forEach((b, i) => {
-      const on = THEMES[i][0] === value;
-      b.setAttribute('aria-checked', String(on));
-      b.tabIndex = on ? 0 : -1;
-    });
-  }
-  seg.addEventListener('keydown', (e) => {
-    const dir = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (!dir) return;
-    e.preventDefault();
-    const i = THEMES.findIndex(([v]) => v === getState().settings.theme);
-    const next = (i + dir + THEMES.length) % THEMES.length;
-    choose(THEMES[next][0]);
-    segButtons[next].focus();
+  const seg = segmented({
+    label: 'Theme', options: THEMES, value: s.theme,
+    onChange: (value) => update((st) => { st.settings.theme = value; }),
   });
 
   const toggle = (key, label, hint) => switchRow({
@@ -44,7 +24,7 @@ export function render(root) {
     topBar({ title: 'Settings' }),
     h('div', { class: 'content settings' },
       h('div', { class: 'card settings-card' },
-        h('div', { class: 'row-label', text: 'Theme' }), seg),
+        h('div', { class: 'row-label', text: 'Theme' }), seg.el),
       h('div', { class: 'card settings-card' },
         toggle('sound', 'Sound'),
         toggle('vibration', 'Vibration', vibHint),
@@ -54,7 +34,7 @@ export function render(root) {
         class: 'btn danger-text clear-all', attrs: { type: 'button' }, text: 'Clear all data',
         on: {
           click: async () => {
-            if (await confirmDialog({ message: 'Delete all lists, history and settings?', confirmLabel: 'Delete' })) {
+            if (await confirmDialog({ message: 'Delete all lists, presets, history and settings?', confirmLabel: 'Delete' })) {
               clearAll();
               location.reload();
             }

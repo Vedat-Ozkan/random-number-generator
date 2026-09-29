@@ -1,18 +1,14 @@
-import { h, topBar, toast } from '../ui.js';
-import { getState, update } from '../store.js';
-import { back, replace, navDepth } from '../router.js';
+import { h, topBar, toast, pasteButton } from '../ui.js';
+import { parseItems } from '../parse.js';
+import { getState, update, ensureBuiltinList } from '../store.js';
+import { back, replace, navDepth, hashQuery, stripHashQuery } from '../router.js';
+import { BUILTIN_LISTS } from '../tools.js';
 import { randInt } from '../rng.js';
-
-const MAX_ITEMS = 500;
-const MAX_LEN = 200;
-
-export function parseItems(text) {
-  return text.split('\n').map((s) => s.trim()).filter(Boolean).map((s) => s.slice(0, MAX_LEN)).slice(0, MAX_ITEMS);
-}
 
 const newId = () => globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36) + randInt(0, 2 ** 31).toString(36);
 
 export function render(root, { id }) {
+  if (id && Object.hasOwn(BUILTIN_LISTS, id)) ensureBuiltinList(id);
   const existing = id ? getState().lists.find((l) => l.id === id) : null;
   if (id && !existing) {
     toast('List not found');
@@ -26,9 +22,22 @@ export function render(root, { id }) {
   name.value = existing ? existing.name : '';
   const items = h('textarea', {
     class: 'field textarea',
-    attrs: { rows: '10', placeholder: 'One item per line', autocapitalize: 'sentences', 'aria-label': 'Items' },
+    attrs: { id: 'items-field', rows: '10', placeholder: 'One item per line', autocapitalize: 'sentences', 'aria-label': 'Items' },
   });
   items.value = existing ? existing.items.join('\n') : '';
+  if (!existing) {
+    const q = hashQuery();
+    if (q.has('name') || q.has('items')) {
+      const rawItems = q.get('items') || '';
+      if (rawItems.length > 20000) toast('This link has invalid settings');
+      else {
+        name.value = (q.get('name') || '').trim().slice(0, 60);
+        items.value = parseItems(rawItems).join('\n');
+        toast('List loaded from link \u2014 tap Save to keep it');
+      }
+      stripHashQuery();
+    }
+  }
   const count = h('div', { class: 'muted field-count', attrs: { 'aria-live': 'off' } });
   const paintCount = () => {
     const n = parseItems(items.value).length;
@@ -64,8 +73,13 @@ export function render(root, { id }) {
     topBar({ title: existing ? 'Edit list' : 'New list' }),
     h('div', { class: 'content editor' },
       h('label', { class: 'field-caption', text: 'Name' }, name),
-      h('label', { class: 'field-caption', text: 'Items' }, items),
-      count,
+      h('div', { class: 'caption-row' },
+        h('label', { class: 'field-caption', attrs: { for: 'items-field' }, text: 'Items' }),
+        pasteButton(items)),
+      items,
+      h('div', { class: 'field-foot' },
+        h('div', { class: 'muted hint', text: 'Tip: add *3 to an item to make it 3\u00d7 as likely.' }),
+        count),
       h('div', { class: 'editor-actions' },
         h('button', { class: 'btn', attrs: { type: 'button' }, text: 'Cancel', on: { click: back } }),
         h('button', { class: 'btn filled', attrs: { type: 'button' }, text: 'Save', on: { click: save } }))));
