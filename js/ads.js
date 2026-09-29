@@ -20,28 +20,38 @@ export function initAds() {
   const slot = document.getElementById('ad-slot');
   if (!ADS_ON || !slot || html.hasAttribute('data-noads')) return;
 
-  let loaded = false;
-  let interacted = false; // scroll restoration on reload must not trigger the load
-  // Load only once the user has scrolled and the slot is near the viewport (never at boot).
+  let scriptAdded = false;
+  let scriptReady = false;
+  let pushed = false;
+  let interacted = false;
+  const shown = () => slot.offsetHeight > 0 && !html.hasAttribute('data-noads');
+  // Never at boot: needs one user interaction and the dock (Home only) actually displayed.
+  // The unit is only pushed while the dock is displayed (AdSense measures the slot width),
+  // so a tap that navigates away from Home waits for the next visit to Home.
   function tryLoad() {
-    if (loaded || !interacted || window.scrollY <= 0 || !slot.offsetHeight) return;
-    if (slot.getBoundingClientRect().top > window.innerHeight + 300) return;
-    loaded = true;
-    window.removeEventListener('scroll', tryLoad);
-    if (!navigator.onLine) { html.setAttribute('data-noads', ''); return; }
-    const script = document.createElement('script');
-    script.async = true;
-    script.crossOrigin = 'anonymous';
-    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ADSENSE_CLIENT)}`;
-    script.onerror = () => html.setAttribute('data-noads', '');
-    document.head.append(script);
+    if (pushed || !interacted || !shown()) return;
+    if (!scriptAdded) {
+      scriptAdded = true;
+      if (!navigator.onLine) { html.setAttribute('data-noads', ''); return; }
+      const script = document.createElement('script');
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(ADSENSE_CLIENT)}`;
+      script.onerror = () => html.setAttribute('data-noads', '');
+      script.onload = () => { scriptReady = true; requestAnimationFrame(tryLoad); };
+      document.head.append(script);
+      return;
+    }
+    if (!scriptReady) return;
+    pushed = true;
     (window.adsbygoogle = window.adsbygoogle || []).push({});
   }
-  window.addEventListener('scroll', tryLoad, { passive: true });
+  const events = ['pointerdown', 'touchstart', 'keydown'];
   const onInput = () => {
     interacted = true;
-    ['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach((e) => window.removeEventListener(e, onInput));
+    events.forEach((e) => window.removeEventListener(e, onInput));
     tryLoad();
   };
-  ['pointerdown', 'touchstart', 'keydown', 'wheel'].forEach((e) => window.addEventListener(e, onInput, { passive: true }));
+  events.forEach((e) => window.addEventListener(e, onInput, { passive: true }));
+  window.addEventListener('hashchange', () => requestAnimationFrame(tryLoad));
 }

@@ -1,4 +1,5 @@
 import { h, topBar, toast, pasteButton } from '../ui.js';
+import { helpButton } from '../help.js';
 import { parseItems } from '../parse.js';
 import { getState, update, ensureBuiltinList } from '../store.js';
 import { back, replace, navDepth, hashQuery, stripHashQuery } from '../router.js';
@@ -12,7 +13,7 @@ export function render(root, { id }) {
   const existing = id ? getState().lists.find((l) => l.id === id) : null;
   if (id && !existing) {
     toast('List not found');
-    replace('#/');
+    back('#/lists');
     return;
   }
 
@@ -21,8 +22,8 @@ export function render(root, { id }) {
   });
   name.value = existing ? existing.name : '';
   const items = h('textarea', {
-    class: 'field textarea',
-    attrs: { id: 'items-field', rows: '10', placeholder: 'One item per line', autocapitalize: 'sentences', 'aria-label': 'Items' },
+    class: 'field textarea editor-text',
+    attrs: { id: 'items-field', rows: '4', placeholder: 'One item per line', autocapitalize: 'sentences', 'aria-label': 'Items' },
   });
   items.value = existing ? existing.items.join('\n') : '';
   if (!existing) {
@@ -70,7 +71,7 @@ export function render(root, { id }) {
   }
 
   root.append(
-    topBar({ title: existing ? 'Edit list' : 'New list' }),
+    topBar({ title: existing ? 'Edit list' : 'New list', actions: [helpButton('listEdit')] }),
     h('div', { class: 'content editor' },
       h('label', { class: 'field-caption', text: 'Name' }, name),
       h('div', { class: 'caption-row' },
@@ -78,7 +79,7 @@ export function render(root, { id }) {
         pasteButton(items)),
       items,
       h('div', { class: 'field-foot' },
-        h('div', { class: 'muted hint', text: 'Tip: add *3 to an item to make it 3\u00d7 as likely.' }),
+        h('div', { class: 'muted hint', text: 'Tip: add a space and *3 after an item (Pizza *3) for 3\u00d7 odds.' }),
         count),
       h('div', { class: 'editor-actions' },
         h('button', { class: 'btn', attrs: { type: 'button' }, text: 'Cancel', on: { click: back } }),

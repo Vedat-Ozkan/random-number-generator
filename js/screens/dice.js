@@ -1,4 +1,4 @@
-import { h, topBar, fab, stepper, chipRow, openSheet, announce, toast, motionOn } from '../ui.js';
+import { h, topBar, fab, stepper, chipRow, openSheet, announce, toast, motionLevel, decorMotion, fitTiles, observeSize } from '../ui.js';
 import { getState, update, addHistory } from '../store.js';
 import { randInt } from '../rng.js';
 import { rollClicks, vibrate } from '../feedback.js';
@@ -11,14 +11,12 @@ const PIPS = {
   1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8],
 };
 const SIDE_CHIPS = [4, 6, 8, 10, 12, 20, 100];
-const dieSize = (n) => (n <= 2 ? 112 : n <= 4 ? 96 : n <= 6 ? 80 : 64);
+const dieMax = (n) => (n <= 2 ? 112 : n <= 4 ? 96 : n <= 6 ? 80 : 64);
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 const dice = () => getState().dice;
 const signed = (m) => (m < 0 ? `−${-m}` : `+${m}`);
 
-function dieEl(size) {
-  return h('div', { class: 'die', attrs: { role: 'img' }, style: { '--die': `${size}px` } });
-}
+const dieEl = () => h('div', { class: 'die', attrs: { role: 'img' } });
 
 function paintDie(el, value, sides) {
   if (sides === 6) {
@@ -48,6 +46,7 @@ export function render(root, params = {}) {
     shareText: () => (lastTotal === null ? '' : `Dice ${notation()}: ${lastTotal}`),
   });
   const area = h('div', { class: 'dice-area', on: { click: () => roll() } });
+  const box = h('div', { class: 'fit-box' }, area);
   const chip = h('button', { class: 'notation-chip', attrs: { type: 'button' }, on: { click: () => openParams() } });
   const totalEl = h('div', { class: 'dice-total' });
   const clearTimers = () => { timers.forEach((t) => { clearTimeout(t); clearInterval(t); }); timers = []; };
@@ -70,10 +69,20 @@ export function render(root, params = {}) {
     pending = null;
     clearTimers();
     const { values, sides } = dice();
-    const size = dieSize(values.length);
-    els = values.map((v) => { const d = dieEl(size); paintDie(d, v, sides); return d; });
+    els = values.map((v) => { const d = dieEl(); paintDie(d, v, sides); return d; });
     area.replaceChildren(...els);
     paintTotal();
+    fit();
+  }
+
+  // Dice shrink to fit the space left by the other controls (never below 40px).
+  function fit() {
+    if (!box.clientWidth || !box.clientHeight) return;
+    const compact = matchMedia('(max-height: 600px)').matches;
+    const { cols, size, fits } = fitTiles(box, els.length, { aspect: 1, gap: compact ? 10 : 16, min: 40, max: dieMax(els.length) });
+    box.style.setProperty('--cols', cols);
+    box.style.setProperty('--die', `${size}px`);
+    box.classList.toggle('scroll-region', !fits);
   }
 
   function settle(values) {
@@ -83,7 +92,7 @@ export function render(root, params = {}) {
     els.forEach((d, i) => {
       d.classList.remove('rolling', 'settle');
       paintDie(d, values[i], sides);
-      if (motionOn()) {
+      if (decorMotion()) {
         void d.offsetWidth;
         d.style.animationDelay = `${i * 30}ms`;
         d.classList.add('settle');
@@ -109,11 +118,12 @@ export function render(root, params = {}) {
     const values = els.map(() => randInt(1, sides));
     update((s) => { s.dice.values = values; });
     rollClicks();
-    if (!motionOn()) { settle(values); return; }
+    const level = motionLevel();
+    if (level === 'off') { settle(values); return; }
     pending = values;
-    els.forEach((d) => { d.classList.remove('rolling'); void d.offsetWidth; d.classList.add('rolling'); });
+    if (decorMotion()) els.forEach((d) => { d.classList.remove('rolling'); void d.offsetWidth; d.classList.add('rolling'); });
     timers.push(setInterval(() => els.forEach((d) => paintDie(d, randInt(1, sides), sides)), 70));
-    timers.push(setTimeout(() => settle(values), 500));
+    timers.push(setTimeout(() => settle(values), level === 'on' ? 500 : 400));
   }
 
   const count = stepper({
@@ -176,13 +186,14 @@ export function render(root, params = {}) {
   const fabEl = fab({ label: 'Roll', onClick: roll });
   root.append(
     topBar({ title: chrome.title, actions: chrome.actions }),
-    h('div', { class: 'content' },
-      chrome.bar,
-      h('div', { class: 'center-area' }, area, chip, totalEl),
+    h('div', { class: 'content dice-page' },
+      chrome.bar, box,
+      h('div', { class: 'dice-info' }, chip, totalEl),
       h('div', { class: 'stepper-wrap' }, count.el)),
     fabEl);
+  const stopObserving = observeSize(box, fit);
   build();
   setPrimaryAction(roll);
   if (init.edit) requestAnimationFrame(openParams);
-  return () => { if (pending) settle(pending); clearTimers(); chrome.cleanup(); };
+  return () => { if (pending) settle(pending); clearTimers(); stopObserving(); chrome.cleanup(); };
 }

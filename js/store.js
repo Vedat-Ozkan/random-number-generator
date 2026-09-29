@@ -9,11 +9,7 @@ export const DEFAULTS = {
   version: VERSION,
   settings: { theme: 'system', sound: true, vibration: true, animations: true },
   number: { from: 1, to: 10, noRepeat: false, drawn: [], count: 1, sort: false, allowDupes: false },
-  lists: [{
-    id: 'default-answer', name: 'Random answer',
-    items: ['Yes', 'No', 'Maybe', 'Ask again later'],
-    noRepeat: false, drawn: [], pickCount: 1,
-  }],
+  lists: [], // new installs start empty; ready-made lists are offered in #/lists
   dice: { count: 2, sides: 6, modifier: 0, values: [1, 1] },
   coin: { heads: 0, tails: 0, last: null, run: 0, best: 0, bestFace: null },
   lots: { n: 6, k: 1 },

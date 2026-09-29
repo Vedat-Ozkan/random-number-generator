@@ -32,7 +32,7 @@ Static hosting, publish the repo root as-is (no build command). See `docs/SPEC-v
 2. Set `SITE_URL`, rebuild, push.
 3. Visit `<site>/?noads=1` once on your own devices (installed iOS app: tap the version in Settings 5×).
 4. Google Search Console → submit `sitemap.xml`; import into Bing Webmaster Tools.
-5. AdSense: set `ADSENSE_CLIENT`, rebuild, request review; after approval create a fixed 320×100 unit → `ADSENSE_SLOT`, turn Auto ads off, publish the GDPR message.
+5. AdSense: set `ADSENSE_CLIENT`, rebuild, request review; after approval create a fixed 320×50 unit → `ADSENSE_SLOT`, turn Auto ads off, publish the GDPR message.
 6. Tip jar: set `TIP_URL` (Ko-fi / Buy Me a Coffee), rebuild.
 
 ## Development workflow

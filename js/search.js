@@ -11,7 +11,7 @@ export function buildIndex(state) {
   for (const t of TOOLS) {
     out.push({
       kind: 'tool', label: t.label, sub: t.label === 'List' ? 'Pick from a list' : 'Tool',
-      href: t.route ? '#' + t.route : '#/list/new', icon: t.icon, keywords: TOOL_KEYWORDS[t.id] || [],
+      href: '#' + t.route, icon: t.icon, keywords: TOOL_KEYWORDS[t.id] || [],
     });
   }
   for (const l of lists) {

@@ -3,3 +3,4 @@ Allow: /
 Disallow: /tools/
 Disallow: /tests/
 Disallow: /docs/
+Sitemap: https://random-number-generator-emf.pages.dev/sitemap.xml

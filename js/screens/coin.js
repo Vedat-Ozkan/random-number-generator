@@ -1,4 +1,4 @@
-import { h, topBar, fab, motionOn } from '../ui.js';
+import { h, topBar, fab, motionLevel, decorMotion } from '../ui.js';
 import { getState, update, addHistory } from '../store.js';
 import { randInt } from '../rng.js';
 import { ting, vibrate } from '../feedback.js';
@@ -17,6 +17,7 @@ export function render(root) {
   let flipping = false;
   let timer = 0;
   let pending = null;
+  let anim = null;
 
   const coinEl = h('div', { class: 'coin' },
     h('div', { class: 'face front' }, h('span', { class: 'face-letter', text: 'H' }), h('span', { class: 'face-label', text: 'HEADS' })),
@@ -27,15 +28,12 @@ export function render(root) {
   const headsCap = h('div', { class: 'stat-cap' });
   const tailsNum = h('div', { class: 'stat-num' });
   const tailsCap = h('div', { class: 'stat-cap' });
-  const streakEl = h('div', { class: 'coin-streak' });
+  const streakEl = h('div', { class: 'coin-streak idle' });
   const statsEl = h('div', { class: 'coin-stats' },
     h('div', { class: 'stat' }, headsNum, headsCap),
     h('div', { class: 'stat' }, tailsNum, tailsCap));
 
-  const setRot = (r, animated) => {
-    coinEl.style.transition = animated ? 'transform 900ms cubic-bezier(.2,.7,.2,1)' : 'none';
-    coinEl.style.transform = `rotateY(${r}deg)`;
-  };
+  const setRot = (r) => { coinEl.style.transform = `rotateY(${r}deg)`; };
 
   function paintText() {
     const c = coin();
@@ -46,16 +44,18 @@ export function render(root) {
     tailsNum.textContent = String(c.tails);
     headsCap.textContent = `HEADS \u00b7 ${pct(c.heads)}`;
     tailsCap.textContent = `TAILS \u00b7 ${pct(c.tails)}`;
-    streakEl.hidden = total === 0;
-    streakEl.textContent = total === 0 || !c.last ? '' :
+    streakEl.classList.toggle('idle', total === 0);
+    streakEl.textContent = total === 0 || !c.last ? ' ' :
       `Streak ${c.run} ${c.last} \u00b7 Longest ${c.best} ${c.bestFace ?? c.last}`;
   }
 
-  function finish() {
+  function finish(silent = false) {
     if (!pending) return;
     const result = pending;
     pending = null;
     clearTimeout(timer);
+    anim?.cancel();
+    anim = null;
     update((s) => {
       const c = s.coin;
       c[result]++;
@@ -66,10 +66,15 @@ export function render(root) {
     flipping = false;
     stage.classList.remove('arc');
     paintText();
-    ting();
-    vibrate(20);
+    if (silent !== true) { ting(); vibrate(20); }
     addHistory('coin', cap(result));
   }
+
+  // Essential motion via the Web Animations API (CSS motion rules never affect it).
+  const FLIP = {
+    on: { ms: 900, turns: 5, easing: 'cubic-bezier(.2,.7,.2,1)' },
+    reduced: { ms: 600, turns: 2, easing: 'cubic-bezier(.25,.6,.3,1)' },
+  };
 
   function flip() {
     if (flipping) return;
@@ -77,22 +82,28 @@ export function render(root) {
     const result = randInt(0, 1) ? 'tails' : 'heads';
     const target = result === 'tails' ? 180 : 0;
     pending = result;
-    if (!motionOn()) {
-      rot += ((target - (((rot % 360) + 360) % 360)) + 360) % 360;
-      setRot(rot, false);
+    const level = motionLevel();
+    const cur = ((rot % 360) + 360) % 360;
+    const delta = (target - cur + 360) % 360;
+    if (level === 'off' || !coinEl.animate) {
+      rot += delta;
+      setRot(rot);
       finish();
       return;
     }
-    const cur = ((rot % 360) + 360) % 360;
-    rot += 1800 + ((target - cur + 360) % 360);
-    stage.classList.remove('arc');
-    void stage.offsetWidth;
-    stage.classList.add('arc');
-    setRot(rot, true);
-    timer = setTimeout(finish, 950);
+    const { ms, turns, easing } = FLIP[level] || FLIP.on;
+    const prev = rot;
+    rot += 360 * turns + delta;
+    setRot(rot); // commit the end state first
+    if (decorMotion()) {
+      stage.classList.remove('arc');
+      void stage.offsetWidth;
+      stage.classList.add('arc');
+    }
+    anim = coinEl.animate([{ transform: `rotateY(${prev}deg)` }, { transform: `rotateY(${rot}deg)` }], { duration: ms, easing });
+    anim.finished.then(() => finish(), () => {});
+    timer = setTimeout(() => finish(), ms + 150);
   }
-
-  coinEl.addEventListener('transitionend', (e) => { if (e.propertyName === 'transform') finish(); });
 
   const reset = h('button', {
     class: 'btn', attrs: { type: 'button' }, text: 'Reset tally',
@@ -107,11 +118,12 @@ export function render(root) {
   const fabEl = fab({ label: 'Flip', onClick: flip });
   root.append(
     topBar({ title: chrome.title, actions: chrome.actions }),
-    h('div', { class: 'content' },
-      h('div', { class: 'center-area' }, stage, resultEl, statsEl, streakEl, h('div', { class: 'coin-reset' }, reset))),
+    h('div', { class: 'content coin-page' },
+      h('div', { class: 'fit-box' }, stage),
+      resultEl, statsEl, streakEl, h('div', { class: 'coin-reset' }, reset)),
     fabEl);
-  setRot(rot, false);
+  setRot(rot);
   paintText();
   setPrimaryAction(flip);
-  return () => { finish(); clearTimeout(timer); chrome.cleanup(); };
+  return () => { finish(true); clearTimeout(timer); chrome.cleanup(); };
 }

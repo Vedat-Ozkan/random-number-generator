@@ -6,7 +6,13 @@ import { MAX_TEXT } from './tools.js';
 
 export const PALETTE = ['#4F46E5', '#0F766E', '#B45309', '#BE185D', '#1D4ED8', '#15803D', '#7C3AED', '#C2410C', '#334155', '#9F1239'];
 
-export const motionOn = () => document.documentElement.dataset.motion !== 'off';
+// 'on' | 'reduced' | 'off'. Use motionLevel() for essential motion (spin, flip, roll);
+// decorMotion() for everything that is only decoration.
+export const motionLevel = () => {
+  const m = document.documentElement.dataset.motion;
+  return m === 'off' || m === 'reduced' ? m : 'on';
+};
+export const decorMotion = () => motionLevel() === 'on';
 
 let uidCounter = 0;
 const uid = (p = 'u') => `${p}${++uidCounter}`;
@@ -64,6 +70,7 @@ export const icons = {
   more: svg('<circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/>'),
   plus: svg('<path d="M12 5v14M5 12h14"/>'),
   minus: svg('<path d="M5 12h14"/>'),
+  help: svg('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2.9-1.2 1.8"/><path d="M12 17h.01"/>'),
   history: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>'),
   tune: svg('<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>'),
   number: svg('<path d="M5 9h14M5 15h14M10 3L8 21M16 3l-2 18"/>'),
@@ -95,8 +102,8 @@ export function iconButton({ icon: name, label, onClick, cls = '', pressed }) {
 }
 
 /* ---------- top bar / FAB / pill ---------- */
-export function topBar({ title, showBack = true, actions = [], large = false }) {
-  return h('header', { class: 'topbar' + (large ? ' large' : '') },
+export function topBar({ title, showBack = true, actions = [], cls = '' }) {
+  return h('header', { class: ('topbar ' + cls).trim() },
     showBack ? iconButton({ icon: 'back', label: 'Back', onClick: back, cls: 'topbar-back' }) : null,
     h('h1', { attrs: { tabindex: '-1' }, text: title }),
     h('div', { class: 'topbar-actions' }, ...actions));
@@ -106,20 +113,16 @@ export function historyButton(onClick) {
   return iconButton({ icon: 'history', label: 'History', onClick });
 }
 
-export function soundToggle() {
-  const on = () => getState().settings.sound;
-  const btn = iconButton({
-    icon: on() ? 'volumeOn' : 'volumeOff', label: 'Sound', pressed: on(),
+// First item of the tool "⋮" menus. Read at open time so the label is current.
+export function soundMenuItem() {
+  const on = getState().settings.sound;
+  return {
+    label: `Sound: ${on ? 'On' : 'Off'}`,
     onClick: () => {
-      update((s) => { s.settings.sound = !s.settings.sound; });
-      paint();
+      update((s) => { s.settings.sound = !on; });
+      toast(on ? 'Sound off' : 'Sound on');
     },
-  });
-  function paint() {
-    btn.setAttribute('aria-pressed', String(on()));
-    btn.replaceChildren(icon(on() ? 'volumeOn' : 'volumeOff'));
-  }
-  return btn;
+  };
 }
 
 export function fab({ label, icon: iconName = 'refresh', onClick, disabled = false }) {
@@ -340,16 +343,17 @@ let menuClosedAt = 0;
 export const isMenuOpen = () => !!menuEl;
 
 function onMenuPointerDown(e) {
-  if (menuEl && !menuEl.contains(e.target)) closeMenu();
+  if (menuEl && !menuEl.contains(e.target)) closeMenu(false, true);
 }
 
-export function closeMenu(restoreFocus = false) {
+// `outside`: closed by a press outside the menu; only then is a quick re-tap on the anchor a toggle-off.
+export function closeMenu(restoreFocus = false, outside = false) {
   if (!menuEl) return;
   document.removeEventListener('pointerdown', onMenuPointerDown, true);
   lastMenuAnchor?.setAttribute('aria-expanded', 'false');
   menuEl.remove();
   menuEl = null;
-  menuClosedAt = Date.now();
+  if (outside) menuClosedAt = Date.now();
   if (restoreFocus && lastMenuAnchor?.isConnected) lastMenuAnchor.focus({ preventScroll: true });
 }
 
@@ -498,9 +502,8 @@ export const isResultOpen = () => !!ov && !ov.hidden;
 // Keep keyboard/AT focus out of the page behind the modal overlay; the FAB stays live.
 function setBackgroundInert(on) {
   const app = document.getElementById('app');
-  const targets = [...(app ? app.children : []), document.getElementById('below')];
-  for (const el of targets) {
-    if (el && !el.classList.contains('fab')) el.inert = on;
+  for (const el of app ? app.children : []) {
+    if (!el.classList.contains('fab')) el.inert = on;
   }
 }
 
@@ -551,18 +554,38 @@ export function closeAllOverlays() {
 beforeMount(closeAllOverlays);
 
 /* ---------- inline result helpers (Teams, Shuffle, Wheel, Lottery, Cards) ---------- */
-// Copy / Share buttons under an inline result. Hidden until `.hidden = false`.
+// Copy / Share buttons under an inline result. The row always takes its space; it is only
+// invisible until setShown(el, true), so showing a result never moves the layout.
 export function resultActions({ getText, onShare }) {
-  return h('div', { class: 'inline-actions', attrs: { hidden: true } },
-    h('button', { class: 'btn sm tonal', attrs: { type: 'button' }, on: { click: () => copyText(getText()) } }, icon('copy', 'sm'), h('span', { text: 'Copy' })),
-    h('button', { class: 'btn sm tonal', attrs: { type: 'button' }, on: { click: () => onShare() } }, icon('share', 'sm'), h('span', { text: 'Share' })));
+  return h('div', { class: 'inline-actions idle' },
+    h('button', { class: 'btn sm tonal', attrs: { type: 'button', 'aria-label': 'Copy' }, on: { click: () => copyText(getText()) } }, icon('copy', 'sm'), h('span', { text: 'Copy' })),
+    h('button', { class: 'btn sm tonal', attrs: { type: 'button', 'aria-label': 'Share' }, on: { click: () => onShare() } }, icon('share', 'sm'), h('span', { text: 'Share' })));
 }
 
-// Brings a freshly drawn inline result into view when it starts below the fold (or under the FAB).
-export function scrollToResult(el) {
-  if (el.getBoundingClientRect().top > window.innerHeight - 110) {
-    el.scrollIntoView({ block: 'nearest', behavior: motionOn() ? 'smooth' : 'auto' });
-  }
-}
+export const setShown = (el, on) => el.classList.toggle('idle', !on);
 
 export const capHistory = (text) => (text.length > 1000 ? text.slice(0, 999) + '…' : text);
+
+// Largest tile size in [min, max] such that n tiles (height = size * aspect) fit the box
+// without scrolling. Returns { cols, size, fits }; when nothing fits at `min`, uses `min`
+// (fits: false) and the caller lets the box scroll.
+export function fitTiles(box, n, { aspect = 1, gap = 8, min = 40, max = 96 } = {}) {
+  const cs = getComputedStyle(box);
+  const w = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const hh = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  let best = null;
+  for (let cols = 1; cols <= n; cols++) {
+    const rows = Math.ceil(n / cols);
+    const size = Math.floor(Math.min((w - gap * (cols - 1)) / cols, (hh - gap * (rows - 1)) / (rows * aspect), max));
+    if (size >= min && (!best || size > best.size || (size === best.size && cols > best.cols))) best = { cols, size, fits: true };
+  }
+  return best || { cols: Math.max(1, Math.min(n, Math.floor((w + gap) / (min + gap)))), size: min, fits: false };
+}
+
+// Re-runs `apply` whenever the box is resized. Returns a disconnect function.
+export function observeSize(box, apply) {
+  if (typeof ResizeObserver === 'undefined') { apply(); return () => {}; }
+  const ro = new ResizeObserver(() => { if (box.clientWidth && box.clientHeight) apply(); });
+  ro.observe(box);
+  return () => ro.disconnect();
+}

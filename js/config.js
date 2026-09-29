@@ -2,12 +2,12 @@
 // Empty string = feature OFF (no script loaded, no empty box, no layout space).
 // After editing, run:  node tools/build-pages.mjs   and commit the result.
 export const CONFIG = {
-  SITE_URL: '',                 // e.g. 'https://example.com/'  (https, include a trailing '/'; include the sub-path if any)
+  SITE_URL: 'https://random-number-generator-emf.pages.dev/',                 // e.g. 'https://example.com/'  (https, include a trailing '/'; include the sub-path if any)
   ADSENSE_CLIENT: '',           // e.g. 'ca-pub-1234567890123456'  (AdSense → Account → Account information)
-  ADSENSE_SLOT: '',             // e.g. '1234567890'  (id of a FIXED-SIZE 320×100 display ad unit)
-  TIP_URL: '',                  // e.g. 'https://ko-fi.com/yourname' or 'https://buymeacoffee.com/yourname'
+  ADSENSE_SLOT: '',             // e.g. '1234567890'  (id of a FIXED-SIZE 320×50 display ad unit)
+  TIP_URL: 'https://ko-fi.com/vedatozkan',                  // e.g. 'https://ko-fi.com/yourname' or 'https://buymeacoffee.com/yourname'
   TIP_LABEL: 'Buy me a coffee',
-  GOOGLE_SITE_VERIFICATION: '', // optional: Search Console "HTML tag" content token
+  GOOGLE_SITE_VERIFICATION: 'GrEqbwsKcm8L1PHF65JznGWGB7L2_MdygIyVydxRXDA', // optional: Search Console "HTML tag" content token
 };
 
 // ---- Derived values. Do not edit below this line. ----

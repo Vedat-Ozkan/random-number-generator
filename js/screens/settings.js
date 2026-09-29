@@ -16,33 +16,44 @@ export function render(root) {
 
   const toggle = (key, label, hint) => switchRow({
     label, hint, checked: s[key], onChange: (v) => update((st) => { st.settings[key] = v; }),
-  }).el;
+  });
+
+  // Animations hint follows the OS reduced-motion setting, live.
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const anim = toggle('animations', 'Animations');
+  const paintAnim = () => anim.setHint(reduce.matches
+    ? 'Your device asks for less motion: spins and flips are shorter. Turn off to stop all motion.'
+    : 'Turn off to stop all motion, including spins and flips.');
+  paintAnim();
+  reduce.addEventListener('change', paintAnim);
 
   const vibHint = 'vibrate' in navigator ? '' : 'Not supported on this device';
 
   root.append(
     topBar({ title: 'Settings' }),
-    h('div', { class: 'content settings' },
+    h('div', { class: 'content settings scroll-region' },
       h('div', { class: 'card settings-card' },
         h('div', { class: 'row-label', text: 'Theme' }), seg.el),
       h('div', { class: 'card settings-card' },
-        toggle('sound', 'Sound'),
-        toggle('vibration', 'Vibration', vibHint),
-        toggle('animations', 'Animations', 'Also off when your system asks to reduce motion')),
+        toggle('sound', 'Sound').el,
+        toggle('vibration', 'Vibration', vibHint).el,
+        anim.el),
       tipCard(),
-      h('button', {
-        class: 'btn danger-text clear-all', attrs: { type: 'button' }, text: 'Clear all data',
-        on: {
-          click: async () => {
-            if (await confirmDialog({ message: 'Delete all lists, presets, history and settings?', confirmLabel: 'Delete' })) {
-              clearAll();
-              location.reload();
-            }
+      h('div', { class: 'settings-foot' },
+        h('button', {
+          class: 'btn danger-text clear-all', attrs: { type: 'button' }, text: 'Clear all data',
+          on: {
+            click: async () => {
+              if (await confirmDialog({ message: 'Delete all lists, presets, history and settings?', confirmLabel: 'Delete' })) {
+                clearAll();
+                location.reload();
+              }
+            },
           },
-        },
-      }),
-      versionLine(),
-      h('a', { class: 'muted privacy-link', attrs: { href: new URL('../../privacy/', import.meta.url).href }, text: 'Privacy' })));
+        }),
+        h('a', { class: 'btn privacy-link', attrs: { href: new URL('../../privacy/', import.meta.url).href }, text: 'Privacy' })),
+      versionLine()));
+  return () => reduce.removeEventListener('change', paintAnim);
 }
 
 function tipCard() {

@@ -3,7 +3,7 @@ import { parseItems, formatDice } from './parse.js';
 
 export const TOOLS = [
   { id: 'number', label: 'Number', icon: 'number', route: '/number', section: 'main', presets: true },
-  { id: 'list', label: 'List', icon: 'list', route: null, section: 'main', presets: false },
+  { id: 'list', label: 'List', icon: 'list', route: '/lists', section: 'main', presets: false },
   { id: 'dice', label: 'Dice', icon: 'dice', route: '/dice', section: 'main', presets: true },
   { id: 'lots', label: 'Cast lots', icon: 'lots', route: '/lots', section: 'main', presets: true },
   { id: 'coin', label: 'Coin', icon: 'coin', route: '/coin', section: 'main', presets: false },
@@ -252,7 +252,7 @@ export const BUILTIN_LISTS = {
 /* ---------- search data ---------- */
 export const TOOL_KEYWORDS = {
   number: ['random number', 'rng', 'pick a number', 'range', 'digit', 'integer'],
-  list: ['list', 'name picker', 'names', 'pick', 'choose', 'random item', 'picker'],
+  list: ['list', 'lists', 'saved lists', 'name picker', 'names', 'pick', 'choose', 'random item', 'picker'],
   dice: ['dice', 'die', 'roll', 'd4', 'd6', 'd8', 'd10', 'd12', 'd20', 'd100', 'rpg', 'dnd', 'tabletop'],
   lots: ['lots', 'draw lots', 'straws', 'draw straws', 'winner', 'raffle'],
   coin: ['coin', 'flip', 'heads', 'tails', 'toss', 'yes no', '50 50', 'decide'],

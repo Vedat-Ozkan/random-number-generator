@@ -1,4 +1,4 @@
-import { h, icon, topBar, fab, paramsPill, openSheet, stepper, motionOn } from '../ui.js';
+import { h, icon, topBar, fab, paramsPill, openSheet, stepper, decorMotion, fitTiles, observeSize } from '../ui.js';
 import { getState, update, addHistory } from '../store.js';
 import { sampleDistinct } from '../rng.js';
 import { click, vibrate } from '../feedback.js';
@@ -14,6 +14,7 @@ export function render(root, params = {}) {
   let revealed = new Set();
   let timer = 0;
   const grid = h('div', { class: 'lots-grid' });
+  const box = h('div', { class: 'fit-box lots-box' }, grid);
   const status = h('div', { class: 'lots-status', attrs: { 'aria-live': 'polite' } });
   const cfg = () => getState().lots;
 
@@ -54,11 +55,20 @@ export function render(root, params = {}) {
     grid.inert = false;
     grid.replaceChildren(...Array.from({ length: n }, (_, i) => lotEl(i)));
     paintStatus();
+    fit();
+  }
+
+  function fit() {
+    if (!box.clientWidth || !box.clientHeight) return;
+    const { cols, size, fits } = fitTiles(box, cfg().n, { aspect: 4 / 3, gap: matchMedia('(max-height: 600px)').matches ? 6 : 8, min: 40, max: 96 });
+    box.style.setProperty('--cols', cols);
+    box.style.setProperty('--tile', `${size}px`);
+    box.classList.toggle('scroll-region', !fits);
   }
 
   function newRound() {
     clearTimeout(timer);
-    if (motionOn() && revealed.size) {
+    if (decorMotion() && revealed.size) {
       grid.inert = true; // no taps while lots flip back
       grid.querySelectorAll('.lot.revealed').forEach((b) => b.classList.remove('revealed'));
       timer = setTimeout(resetRound, 300);
@@ -93,10 +103,11 @@ export function render(root, params = {}) {
 
   root.append(
     topBar({ title: chrome.title, actions: chrome.actions }),
-    h('div', { class: 'content' }, chrome.bar, status, grid, paramsPill(openParams)),
+    h('div', { class: 'content' }, chrome.bar, status, box, paramsPill(openParams)),
     fab({ label: 'New round', onClick: newRound }));
+  const stopObserving = observeSize(box, fit);
   resetRound();
   setPrimaryAction(newRound);
   if (init.edit) requestAnimationFrame(openParams);
-  return () => { clearTimeout(timer); chrome.cleanup(); };
+  return () => { clearTimeout(timer); stopObserving(); chrome.cleanup(); };
 }

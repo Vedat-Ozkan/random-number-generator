@@ -105,8 +105,9 @@ test('normalize clamps and filters', () => {
   assert.equal(normalize({ lots: { n: 5, k: 40 } }).lots.k, 4);
 });
 
-test('missing lists key seeds default, empty array stays empty', () => {
-  assert.equal(normalize({ version: 1 }).lists.length, 1);
+test('new installs start with no saved lists; stored lists are kept', () => {
+  assert.equal(normalize({ version: 1 }).lists.length, 0);
+  assert.equal(normalize(null).lists.length, 0);
   assert.equal(normalize({ version: 1, lists: [] }).lists.length, 0);
 });
 

@@ -29,6 +29,11 @@
   }
   document.documentElement.setAttribute('data-theme', theme);
 })();
+// Home is flagged before first paint so the ad dock (Home only) never shifts the layout.
+try {
+  var e = document.documentElement, hs = location.hash;
+  if (e.getAttribute('data-entry') === '/' && (hs === '' || hs === '#' || hs === '#/')) e.setAttribute('data-home', '');
+} catch (err) {}
 // Ads are decided before first paint so the ad slot never takes space when off.
 try {
   var q = new URLSearchParams(location.search).get('noads');
@@ -40,16 +45,13 @@ try {
 if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) document.documentElement.setAttribute('data-noads', '');
 </script>
 <link rel="stylesheet" href="{{BASE}}css/app.css">
+<noscript><style>html,body{height:auto}body{display:block}#help{display:block;position:static;max-height:none}</style></noscript>
 {{APP_HEAD}}
 </head>
 <body>
 {{APP_MAIN}}
-<div id="below" class="below">
 {{AD_SLOT}}
-<article class="about">{{ARTICLE}}</article>
-{{NAV}}
-{{FOOTER}}
-</div>
+{{HELP}}
 <div id="live" class="sr-only" aria-live="polite"></div>
 </body>
 </html>

@@ -1,5 +1,5 @@
 // Presets, tool chrome (menu, preset bar) and share. DOM module.
-import { h, iconButton, historyButton, soundToggle, openMenu, promptDialog, confirmDialog, toast, copyText } from './ui.js';
+import { h, iconButton, historyButton, soundMenuItem, openMenu, promptDialog, confirmDialog, toast, copyText } from './ui.js';
 import {
   getState, update, subscribe, getPreset, addPreset, updatePreset, renamePreset, deletePreset,
   MAX_PRESETS, MAX_PRESETS_PER_TOOL,
@@ -9,6 +9,7 @@ import {
 } from './tools.js';
 import { hashQuery, stripHashQuery, replace, remount } from './router.js';
 import { openHistorySheet } from './screens/history.js';
+import { helpButton } from './help.js';
 
 const siteRoot = () => new URL('../', import.meta.url).href;
 
@@ -103,14 +104,13 @@ export function toolChrome({ tool, preset, title, historyKey, shareText }) {
   const bar = h('div', { class: 'preset-bar', attrs: { hidden: true } }, text,
     h('div', { class: 'preset-bar-actions' },
       h('button', { class: 'btn sm', attrs: { type: 'button' }, text: 'Update', on: { click: doUpdate } }),
-      h('button', { class: 'btn sm', attrs: { type: 'button' }, text: 'Save as new', on: { click: () => saveNew(`${live()?.name ?? ''} 2`) } }),
       h('button', { class: 'btn sm', attrs: { type: 'button' }, text: 'Revert', on: { click: doRevert } })));
 
   function paintBar() {
     const p = live();
     const dirty = !!p && configKey(tool, current()) !== configKey(tool, p.config);
     if (dirty) {
-      const msg = `Changed from "${p.name}"`;
+      const msg = 'Unsaved changes';
       if (text.textContent !== msg) text.textContent = msg;
     } else text.textContent = '';
     bar.hidden = !dirty;
@@ -166,7 +166,7 @@ export function toolChrome({ tool, preset, title, historyKey, shareText }) {
   const menuBtn = iconButton({
     icon: 'more', label: 'Tool options',
     onClick: () => {
-      const items = [];
+      const items = [soundMenuItem()];
       if (t.presets) {
         items.push({
           label: preset ? 'Save as new preset…' : 'Save as preset…',
@@ -187,7 +187,7 @@ export function toolChrome({ tool, preset, title, historyKey, shareText }) {
   paintBar();
   return {
     title: preset ? preset.name : title,
-    actions: [historyButton(() => openHistorySheet(historyKey, t.label)), soundToggle(), menuBtn],
+    actions: [historyButton(() => openHistorySheet(historyKey, t.label)), menuBtn, helpButton(tool)],
     bar,
     cleanup: unsub,
   };

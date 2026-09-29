@@ -1,4 +1,4 @@
-import { h, topBar, fab, paramsPill, openSheet, stepper, switchRow, noRepeatCard, announce, toast, motionOn, resultActions, scrollToResult, capHistory } from '../ui.js';
+import { h, topBar, fab, paramsPill, openSheet, stepper, switchRow, noRepeatCard, announce, toast, decorMotion, resultActions, setShown, capHistory } from '../ui.js';
 import { getState, update, addHistory } from '../store.js';
 import { draw } from '../rng.js';
 import { click, vibrate } from '../feedback.js';
@@ -26,7 +26,7 @@ export function cardInfo(i) {
 function cardEl(i, delay) {
   const c = cardInfo(i);
   const el = h('div', {
-    class: 'playing-card ' + (c.red ? 'red' : 'black') + (c.joker ? ' joker' : '') + (motionOn() ? ' reveal' : ''),
+    class: 'playing-card ' + (c.red ? 'red' : 'black') + (c.joker ? ' joker' : '') + (decorMotion() ? ' reveal' : ''),
     attrs: { role: 'img', 'aria-label': c.name }, style: { animationDelay: `${delay}ms` },
   });
   if (c.joker) {
@@ -57,7 +57,7 @@ export function render(root, params = {}) {
     pool.update({ on: c.noRepeat, drawn: c.drawn.length, total: deckSize() });
   }
 
-  const hand = h('div', { class: 'hand', attrs: { hidden: true } });
+  const hand = h('div', { class: 'hand scroll-region' }, h('p', { class: 'muted region-empty', text: 'Tap Draw to deal' }));
   const actions = resultActions({ getText: () => lastCopy, onShare: () => share('cards', () => lastCopy, init.preset) });
 
   function drawCards() {
@@ -72,13 +72,12 @@ export function render(root, params = {}) {
     const infos = r.values.map(cardInfo);
     lastCopy = infos.map((i) => i.short).join(', ');
     hand.replaceChildren(...r.values.map((v, i) => cardEl(v, i * 40)));
-    hand.hidden = false;
-    actions.hidden = false;
+    hand.scrollTop = 0;
+    setShown(actions, true);
     click();
     vibrate(15);
     addHistory('cards', capHistory(lastCopy));
     announce(infos.map((i) => i.name).join(', '));
-    scrollToResult(hand);
   }
 
   function openParams() {
@@ -105,7 +104,8 @@ export function render(root, params = {}) {
   const fabEl = fab({ label: 'Draw', icon: 'cards', onClick: drawCards });
   root.append(
     topBar({ title: chrome.title, actions: chrome.actions }),
-    h('div', { class: 'content tool-stack' }, chrome.bar, pool.el, hand, actions, h('div', { class: 'pill-wrap' }, paramsPill(openParams))),
+    h('div', { class: 'content tool-stack' }, chrome.bar, pool.el, hand,
+      h('div', { class: 'foot-row' }, actions, paramsPill(openParams))),
     fabEl);
   refresh();
   setPrimaryAction(drawCards);

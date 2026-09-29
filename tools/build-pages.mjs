@@ -48,7 +48,6 @@ for (const p of PAGES) {
     if (!p.faq || p.faq.length < 2) fail(`needs 2+ FAQs: ${p.slug || 'home'}`);
     if (p.slug) {
       if (!p.nav) fail(`no nav: ${p.slug}`);
-      if (!p.blurb) fail(`no blurb: ${p.slug}`);
       if (!groupIds.has(p.group)) fail(`missing or invalid group: ${p.slug}`);
     }
   }
@@ -109,50 +108,43 @@ function seoMeta(p) {
   return l.join('\n');
 }
 
-function article(p, base) {
-  const out = [`<h1>${esc(p.h1)}</h1>`];
+const TIP_HTML = TIP_URL ? ` · <a href="${esc(TIP_URL)}" target="_blank" rel="noopener">${esc(TIP_LABEL)}</a>` : '';
+
+// Static help dialog: the page's SEO copy plus crawlable links to the other tools.
+function help(p, base) {
+  const out = ['<dialog id="help" class="sheet help-sheet" aria-labelledby="help-h1">', '<div class="sheet-body">',
+    '<div class="sheet-handle" aria-hidden="true"></div>', '<article class="help-doc">', `<h1 id="help-h1" tabindex="-1">${esc(p.h1)}</h1>`];
   p.intro.forEach((t) => out.push(`<p>${esc(t)}</p>`));
-  if (!p.tool && ADSENSE_CLIENT) out.push(`<p>${linkify(ADS_PRIVACY)}</p>`);
-  if (p.toolList) {
-    out.push('<div class="tool-groups">', '<h2>All tools</h2>');
-    for (const [id, label] of GROUPS) {
-      const pages = PAGES.filter((x) => x.tool && x.slug && x.group === id);
-      if (!pages.length) continue;
-      out.push(`<h3>${esc(label)}</h3>`, '<ul class="tool-links">');
-      pages.forEach((x) => out.push(`<li><a href="${pageHref(base, x)}">${esc(x.nav)}</a> ${esc(x.blurb)}</li>`));
-      out.push('</ul>');
-    }
-    out.push('</div>');
+  out.push('<h2>Questions</h2>');
+  p.faq.forEach(([q, a]) => out.push(`<h3>${esc(q)}</h3>`, `<p>${esc(a)}</p>`));
+  out.push('<nav class="help-links" aria-label="Other tools">', `<h2>${p.slug ? 'Other tools' : 'All tools'}</h2>`, '<ul>');
+  for (const [id] of GROUPS) {
+    PAGES.filter((x) => x.tool && x.slug && x.group === id && x !== p)
+      .forEach((x) => out.push(`<li><a href="${pageHref(base, x)}">${esc(x.nav)}</a></li>`));
   }
-  if (p.faq.length) {
-    out.push('<h2>Questions</h2>');
-    p.faq.forEach(([q, a]) => out.push(`<h3>${esc(q)}</h3>`, `<p>${esc(a)}</p>`));
-  }
+  if (p.slug) out.push(`<li><a href="${base}">All tools</a></li>`);
+  out.push('</ul>', '</nav>', `<p class="help-foot"><a href="${base}privacy/">Privacy</a>${TIP_HTML}</p>`, '</article>',
+    '<form method="dialog" class="sheet-actions"><button class="btn filled">Done</button></form>', '</div>', '</dialog>');
   return out.join('\n');
 }
 
-function nav(p, base) {
-  if (!p.tool) return '';
-  const parts = ['<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2>'];
-  for (const [id, label] of GROUPS) {
-    const items = PAGES.filter((x) => x.tool && x.slug && x.group === id && x !== p)
-      .map((x) => `<li><a href="${pageHref(base, x)}">${esc(x.nav)}</a></li>`);
-    if (items.length) parts.push(`<h3>${esc(label)}</h3>`, `<ul>\n${items.join('\n')}\n</ul>`);
-  }
-  if (p.slug) parts.push(`<ul><li><a href="${base}">All tools</a></li></ul>`);
-  parts.push('</nav>');
-  return parts.join('\n');
-}
+const BACK_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg>';
 
-function footer(base) {
-  const tip = TIP_URL ? ` · <a href="${esc(TIP_URL)}" target="_blank" rel="noopener">${esc(TIP_LABEL)}</a>` : '';
-  return `<footer class="site-footer"><a href="${base}">Home</a> · <a href="${base}privacy/">Privacy</a>${tip}</footer>`;
+// Privacy (p.tool === false): a static full-height page; only .doc may scroll.
+function docPage(p) {
+  const paras = p.intro.map((t) => `<p>${esc(t)}</p>`);
+  if (ADSENSE_CLIENT) paras.push(`<p>${linkify(ADS_PRIVACY)}</p>`);
+  return `<main class="doc-page">
+<header class="topbar"><a class="icon-btn topbar-back" href="../" aria-label="Home"><span class="icon">${BACK_ICON}</span></a><h1>${esc(p.h1)}</h1></header>
+<div class="doc scroll-region">
+${paras.join('\n')}
+</div>
+</main>`;
 }
 
 const AD_SLOT = ADS_ON
-  ? `<aside id="ad-slot" class="ad-slot" aria-label="Advertisement">
-  <span class="ad-label">Advertisement</span>
-  <ins class="adsbygoogle" style="display:inline-block;width:320px;height:100px"
+  ? `<aside id="ad-slot" class="ad-dock" aria-label="Advertisement">
+  <ins class="adsbygoogle" style="display:inline-block;width:320px;height:50px"
        data-ad-client="${esc(ADSENSE_CLIENT)}" data-ad-slot="${esc(cfg.ADSENSE_SLOT)}"></ins>
 </aside>`
   : '';
@@ -169,11 +161,9 @@ function render(p) {
     APP_HEAD: p.tool
       ? jsModules.map((m) => `<link rel="modulepreload" href="${base}${m.slice(2)}">`).join('\n') + `\n<script type="module" src="${base}js/app.js"></script>`
       : '',
-    APP_MAIN: p.tool ? '<main id="app"><noscript><p class="noscript">Turn on JavaScript to use this tool.</p></noscript></main>' : '',
+    APP_MAIN: p.tool ? '<main id="app"><noscript><p class="noscript">Turn on JavaScript to use this tool.</p></noscript></main>' : docPage(p),
     AD_SLOT: p.tool ? AD_SLOT : '',
-    ARTICLE: article(p, base),
-    NAV: nav(p, base),
-    FOOTER: footer(base),
+    HELP: p.tool ? help(p, base) : '',
   };
   // Function replacer: values may contain "$" sequences.
   const html = template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in vals ? vals[k] : m));

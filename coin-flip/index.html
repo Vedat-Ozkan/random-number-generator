@@ -6,12 +6,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Coin Flip: Flip a Coin Online (Heads or Tails)</title>
 <meta name="description" content="Flip a coin online: a fair 50/50 heads or tails toss with a 3D animation and a running tally. Free, fast and works offline.">
+<link rel="canonical" href="https://random-number-generator-emf.pages.dev/coin-flip/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Random">
 <meta property="og:title" content="Coin Flip: Flip a Coin Online (Heads or Tails)">
 <meta property="og:description" content="Flip a coin online: a fair 50/50 heads or tails toss with a 3D animation and a running tally. Free, fast and works offline.">
-<meta name="twitter:card" content="summary">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Flip a coin","description":"Flip a coin online: a fair 50/50 heads or tails toss with a 3D animation and a running tally. Free, fast and works offline.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is this coin flip fair?","acceptedAnswer":{"@type":"Answer","text":"Yes. Heads and tails each have exactly a 50% chance on every flip."}},{"@type":"Question","name":"Why did I get heads five times in a row?","acceptedAnswer":{"@type":"Answer","text":"Streaks are normal in fair random sequences. Any given five flips have a 1 in 32 chance of all being heads."}},{"@type":"Question","name":"Does it work without internet?","acceptedAnswer":{"@type":"Answer","text":"Yes, after your first visit."}},{"@type":"Question","name":"Can I see how often I got heads?","acceptedAnswer":{"@type":"Answer","text":"Yes. Under the coin you see the heads and tails counts with percentages, your current streak and your longest streak. Reset tally starts over."}}]}]}</script>
+<meta property="og:url" content="https://random-number-generator-emf.pages.dev/coin-flip/">
+<meta property="og:image" content="https://random-number-generator-emf.pages.dev/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Random: number, dice, coin, list, wheel and team tools">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="google-site-verification" content="GrEqbwsKcm8L1PHF65JznGWGB7L2_MdygIyVydxRXDA">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebApplication","name":"Flip a coin","url":"https://random-number-generator-emf.pages.dev/coin-flip/","description":"Flip a coin online: a fair 50/50 heads or tails toss with a 3D animation and a running tally. Free, fast and works offline.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"image":"https://random-number-generator-emf.pages.dev/og.png"},{"@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is this coin flip fair?","acceptedAnswer":{"@type":"Answer","text":"Yes. Heads and tails each have exactly a 50% chance on every flip."}},{"@type":"Question","name":"Why did I get heads five times in a row?","acceptedAnswer":{"@type":"Answer","text":"Streaks are normal in fair random sequences. Any given five flips have a 1 in 32 chance of all being heads."}},{"@type":"Question","name":"Does it work without internet?","acceptedAnswer":{"@type":"Answer","text":"Yes, after your first visit."}},{"@type":"Question","name":"Can I see how often I got heads?","acceptedAnswer":{"@type":"Answer","text":"Yes. Under the coin you see the heads and tails counts with percentages, your current streak and your longest streak. Reset tally starts over."}}]}]}</script>
 <meta name="theme-color" content="#0B0B0C">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
@@ -34,6 +40,11 @@
   }
   document.documentElement.setAttribute('data-theme', theme);
 })();
+// Home is flagged before first paint so the ad dock (Home only) never shifts the layout.
+try {
+  var e = document.documentElement, hs = location.hash;
+  if (e.getAttribute('data-entry') === '/' && (hs === '' || hs === '#' || hs === '#/')) e.setAttribute('data-home', '');
+} catch (err) {}
 // Ads are decided before first paint so the ad slot never takes space when off.
 try {
   var q = new URLSearchParams(location.search).get('noads');
@@ -45,6 +56,7 @@ try {
 if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) document.documentElement.setAttribute('data-noads', '');
 </script>
 <link rel="stylesheet" href="../css/app.css">
+<noscript><style>html,body{height:auto}body{display:block}#help{display:block;position:static;max-height:none}</style></noscript>
 <link rel="modulepreload" href="../js/router.js">
 <link rel="modulepreload" href="../js/store.js">
 <link rel="modulepreload" href="../js/rng.js">
@@ -72,13 +84,18 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <link rel="modulepreload" href="../js/screens/wheel.js">
 <link rel="modulepreload" href="../js/screens/lottery.js">
 <link rel="modulepreload" href="../js/screens/cards.js">
+<link rel="modulepreload" href="../js/help.js">
+<link rel="modulepreload" href="../js/screens/lists.js">
 <script type="module" src="../js/app.js"></script>
 </head>
 <body>
 <main id="app"><noscript><p class="noscript">Turn on JavaScript to use this tool.</p></noscript></main>
-<div id="below" class="below">
 
-<article class="about"><h1>Flip a coin</h1>
+<dialog id="help" class="sheet help-sheet" aria-labelledby="help-h1">
+<div class="sheet-body">
+<div class="sheet-handle" aria-hidden="true"></div>
+<article class="help-doc">
+<h1 id="help-h1" tabindex="-1">Flip a coin</h1>
 <p>Tap the coin or the flip button to toss it. The coin spins and lands on heads or tails, and the tally counts every result until you reset it.</p>
 <p>Each flip is an independent 50/50 draw from your device&#39;s secure random generator, so earlier flips never influence the next one.</p>
 <h2>Questions</h2>
@@ -89,9 +106,9 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <h3>Does it work without internet?</h3>
 <p>Yes, after your first visit.</p>
 <h3>Can I see how often I got heads?</h3>
-<p>Yes. Under the coin you see the heads and tails counts with percentages, your current streak and your longest streak. Reset tally starts over.</p></article>
-<nav class="other-tools" aria-label="Other tools"><h2>More random tools</h2>
-<h3>Numbers</h3>
+<p>Yes. Under the coin you see the heads and tails counts with percentages, your current streak and your longest streak. Reset tally starts over.</p>
+<nav class="help-links" aria-label="Other tools">
+<h2>Other tools</h2>
 <ul>
 <li><a href="../random-number-generator/">Random number generator</a></li>
 <li><a href="../random-number-1-6/">Random number 1–6</a></li>
@@ -100,9 +117,6 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <li><a href="../random-number-1-100/">Random number 1–100</a></li>
 <li><a href="../random-number-1-1000/">Random number 1–1000</a></li>
 <li><a href="../lottery-number-generator/">Lottery numbers</a></li>
-</ul>
-<h3>Dice, coins &amp; cards</h3>
-<ul>
 <li><a href="../dice-roller/">Dice roller</a></li>
 <li><a href="../d4-dice-roller/">D4 roller</a></li>
 <li><a href="../d6-dice-roller/">D6 roller</a></li>
@@ -111,28 +125,25 @@ if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) 
 <li><a href="../d12-dice-roller/">D12 roller</a></li>
 <li><a href="../d20-dice-roller/">D20 roller</a></li>
 <li><a href="../draw-a-card/">Draw a card</a></li>
-</ul>
-<h3>Lists, names &amp; teams</h3>
-<ul>
 <li><a href="../random-name-picker/">Random name picker</a></li>
 <li><a href="../team-generator/">Team generator</a></li>
 <li><a href="../shuffle-list/">Shuffle a list</a></li>
 <li><a href="../spin-the-wheel/">Spin the wheel</a></li>
 <li><a href="../draw-lots/">Draw lots</a></li>
-</ul>
-<h3>Answers &amp; picks</h3>
-<ul>
 <li><a href="../yes-or-no/">Yes or no</a></li>
 <li><a href="../magic-8-ball/">Magic 8-ball</a></li>
 <li><a href="../rock-paper-scissors/">Rock paper scissors</a></li>
 <li><a href="../random-letter-generator/">Random letter</a></li>
 <li><a href="../random-month-generator/">Random month</a></li>
 <li><a href="../random-day-of-the-week/">Random weekday</a></li>
+<li><a href="../">All tools</a></li>
 </ul>
-<ul><li><a href="../">All tools</a></li></ul>
 </nav>
-<footer class="site-footer"><a href="../">Home</a> · <a href="../privacy/">Privacy</a></footer>
+<p class="help-foot"><a href="../privacy/">Privacy</a> · <a href="https://ko-fi.com/vedatozkan" target="_blank" rel="noopener">Buy me a coffee</a></p>
+</article>
+<form method="dialog" class="sheet-actions"><button class="btn filled">Done</button></form>
 </div>
+</dialog>
 <div id="live" class="sr-only" aria-live="polite"></div>
 </body>
 </html>

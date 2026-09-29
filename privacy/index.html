@@ -6,11 +6,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Privacy: Random</title>
 <meta name="description" content="How Random handles your data: lists and settings stay on your device. Explains ads and cookies when ads are shown.">
+<link rel="canonical" href="https://random-number-generator-emf.pages.dev/privacy/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Random">
 <meta property="og:title" content="Privacy: Random">
 <meta property="og:description" content="How Random handles your data: lists and settings stay on your device. Explains ads and cookies when ads are shown.">
-<meta name="twitter:card" content="summary">
+<meta property="og:url" content="https://random-number-generator-emf.pages.dev/privacy/">
+<meta property="og:image" content="https://random-number-generator-emf.pages.dev/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Random: number, dice, coin, list, wheel and team tools">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="google-site-verification" content="GrEqbwsKcm8L1PHF65JznGWGB7L2_MdygIyVydxRXDA">
 <meta name="theme-color" content="#0B0B0C">
 <link rel="manifest" href="../manifest.webmanifest">
 <link rel="icon" href="../icons/icon.svg" type="image/svg+xml">
@@ -33,6 +39,11 @@
   }
   document.documentElement.setAttribute('data-theme', theme);
 })();
+// Home is flagged before first paint so the ad dock (Home only) never shifts the layout.
+try {
+  var e = document.documentElement, hs = location.hash;
+  if (e.getAttribute('data-entry') === '/' && (hs === '' || hs === '#' || hs === '#/')) e.setAttribute('data-home', '');
+} catch (err) {}
 // Ads are decided before first paint so the ad slot never takes space when off.
 try {
   var q = new URLSearchParams(location.search).get('noads');
@@ -44,19 +55,20 @@ try {
 if (!navigator.onLine || /^(localhost|127\.|\[::1\]$)/.test(location.hostname)) document.documentElement.setAttribute('data-noads', '');
 </script>
 <link rel="stylesheet" href="../css/app.css">
+<noscript><style>html,body{height:auto}body{display:block}#help{display:block;position:static;max-height:none}</style></noscript>
 
 </head>
 <body>
-
-<div id="below" class="below">
-
-<article class="about"><h1>Privacy</h1>
+<main class="doc-page">
+<header class="topbar"><a class="icon-btn topbar-back" href="../" aria-label="Home"><span class="icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg></span></a><h1>Privacy</h1></header>
+<div class="doc scroll-region">
 <p>Random has no accounts and no analytics.</p>
 <p>Your lists, settings and history are stored only in your browser&#39;s local storage on this device, and you can erase them with Settings → Clear all data.</p>
-<p>The app files are cached on your device so that it works offline.</p></article>
-
-<footer class="site-footer"><a href="../">Home</a> · <a href="../privacy/">Privacy</a></footer>
+<p>The app files are cached on your device so that it works offline.</p>
 </div>
+</main>
+
+
 <div id="live" class="sr-only" aria-live="polite"></div>
 </body>
 </html>

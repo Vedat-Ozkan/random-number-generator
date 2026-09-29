@@ -1,14 +1,18 @@
-import { h, topBar, fab, announce, motionOn, PALETTE, resultActions, scrollToResult } from '../ui.js';
+import { h, topBar, fab, announce, motionLevel, PALETTE, resultActions, setShown } from '../ui.js';
 import { addHistory } from '../store.js';
 import { randInt, weightedIndex } from '../rng.js';
 import { click, ting, vibrate } from '../feedback.js';
 import { setPrimaryAction } from '../router.js';
 import { initTool, toolChrome, share } from '../presets.js';
-import { sourceCard } from './source.js';
+import { sourceSummary } from './source.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAX_ITEMS = 100;
-const SPIN_MS = 4400;
+// Essential motion (Web Animations API, so CSS motion rules never affect it).
+const SPIN = {
+  on: { ms: 4400, turns: 6, easing: 'cubic-bezier(.12,.72,.14,1)' },
+  reduced: { ms: 1800, turns: 2, easing: 'cubic-bezier(.25,.6,.3,1)' },
+};
 const MIN_LABEL_DEG = 5.5;
 
 const svgEl = (tag, attrs = {}, text) => {
@@ -31,27 +35,30 @@ export function render(root, params = {}) {
   let segs = []; // [{ start, width }]
   let rotation = 0;
   let spinning = null; // { finish }
+  let anim = null;
   const chrome = toolChrome({ tool: 'wheel', preset: init.preset, title: 'Wheel', historyKey: 'wheel', shareText: () => (lastText ? `Wheel: ${lastText}` : '') });
 
   const svg = svgEl('svg', { class: 'wheel', viewBox: '-110 -110 220 220', role: 'img' });
   const stage = h('div', { class: 'wheel-stage' }, svg, h('div', { class: 'wheel-pointer', attrs: { 'aria-hidden': 'true' } }), h('div', { class: 'wheel-hub', attrs: { 'aria-hidden': 'true' } }));
   const resultEl = h('div', { class: 'wheel-result', attrs: { 'aria-live': 'polite' } });
-  const note = h('div', { class: 'muted hint wheel-note', attrs: { hidden: true }, text: 'Showing the first 100 items' });
 
   const actions = resultActions({ getText: () => lastText, onShare: () => share('wheel', () => `Wheel: ${lastText}`, init.preset) });
-  const source = sourceCard({ tool: 'wheel', onChange: () => rebuild() });
+  const source = sourceSummary({ tool: 'wheel', noun: 'items', cap: MAX_ITEMS, onChange: () => rebuild() });
   const fabEl = fab({ label: 'Spin', icon: 'wheel', onClick: () => spin() });
 
-  function finishNow() { spinning?.finish(); }
+  function finishNow() {
+    anim?.cancel();
+    anim = null;
+    spinning?.finish(true); // silent: no sound, history or announcement
+  }
 
   function rebuild() {
     finishNow();
     resultEl.textContent = '';
+    setShown(actions, false);
     const all = source.getItems();
     items = all.slice(0, MAX_ITEMS);
-    note.hidden = all.length <= MAX_ITEMS;
     rotation = 0;
-    svg.style.transition = 'none';
     svg.style.transform = 'rotate(0deg)';
     svg.replaceChildren();
     segs = [];
@@ -117,47 +124,45 @@ export function render(root, params = {}) {
     const { start, width } = segs[i];
     const target = start + width * (0.15 + (0.7 * randInt(0, 1000)) / 1000);
     const delta = ((((-target - rotation) % 360) + 360) % 360);
-    rotation += 360 * 6 + delta;
+    const level = motionLevel();
+    const { ms, turns, easing } = SPIN[level] || SPIN.on;
+    const prev = rotation;
+    rotation += 360 * turns + delta;
+    svg.style.transform = `rotate(${rotation}deg)`; // commit the end state first
     resultEl.textContent = '';
+    setShown(actions, false);
     const text = items[i].text;
     let timer = 0;
     let done = false;
-    const finish = () => {
+    const finish = (silent = false) => {
       if (done) return;
       done = true;
       clearTimeout(timer);
-      svg.removeEventListener('transitionend', onEnd);
+      anim = null;
       spinning = null;
+      if (silent === true) return;
       resultEl.textContent = text;
       lastText = text;
       ting();
       vibrate(20);
       addHistory('wheel', text.slice(0, 1000));
       announce(`Landed on ${text}`);
-      actions.hidden = false;
-      scrollToResult(resultEl);
+      setShown(actions, true);
     };
-    const onEnd = (e) => { if (e.target === svg && e.propertyName === 'transform') finish(); };
     spinning = { finish };
     click();
-    if (motionOn()) {
-      svg.addEventListener('transitionend', onEnd);
-      timer = setTimeout(finish, SPIN_MS + 200);
-      svg.style.transition = `transform ${SPIN_MS}ms cubic-bezier(.12,.72,.14,1)`;
-      void svg.getBoundingClientRect();
-      svg.style.transform = `rotate(${rotation}deg)`;
-    } else {
-      svg.style.transition = 'none';
-      svg.style.transform = `rotate(${rotation}deg)`;
-      finish();
-    }
+    if (level === 'off' || !svg.animate) { finish(); return; }
+    anim = svg.animate([{ transform: `rotate(${prev}deg)` }, { transform: `rotate(${rotation}deg)` }], { duration: ms, easing });
+    anim.finished.then(() => finish(), () => {}); // cancel() rejects: ignore
+    timer = setTimeout(() => finish(), ms + 300); // safety net (hidden tab, etc.)
   }
 
   root.append(
     topBar({ title: chrome.title, actions: chrome.actions }),
-    h('div', { class: 'content tool-stack' }, chrome.bar,
-      h('div', { class: 'wheel-wrap' }, stage, resultEl, actions, note),
-      source.el),
+    h('div', { class: 'content tool-stack' }, chrome.bar, source.el,
+      h('div', { class: 'fit-box' }, stage),
+      resultEl,
+      h('div', { class: 'foot-row' }, actions)),
     fabEl);
   rebuild();
   setPrimaryAction(spin);

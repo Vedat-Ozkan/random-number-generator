@@ -1,10 +1,10 @@
-import { h, topBar, fab, stepper, segmented, announce, toast, motionOn, resultActions, scrollToResult, capHistory, PALETTE } from '../ui.js';
+import { h, topBar, fab, stepper, segmented, announce, toast, decorMotion, resultActions, setShown, capHistory, PALETTE } from '../ui.js';
 import { getState, update, addHistory } from '../store.js';
 import { splitTeams } from '../rng.js';
 import { click, vibrate } from '../feedback.js';
 import { setPrimaryAction } from '../router.js';
 import { initTool, toolChrome, share } from '../presets.js';
-import { sourceCard } from './source.js';
+import { sourceSummary } from './source.js';
 
 const sec = () => getState().teams;
 
@@ -13,7 +13,7 @@ export function render(root, params = {}) {
   if (!init) return;
   let lastCopy = '';
   const chrome = toolChrome({ tool: 'teams', preset: init.preset, title: 'Teams', historyKey: 'teams', shareText: () => lastCopy });
-  const source = sourceCard({ tool: 'teams' });
+  const source = sourceSummary({ tool: 'teams', noun: 'names' });
 
   const settings = h('div', { class: 'card settings-card' });
   const modeSeg = segmented({
@@ -32,7 +32,8 @@ export function render(root, params = {}) {
   }
   paintSettings();
 
-  const result = h('div', { class: 'teams-grid', attrs: { hidden: true } });
+  const placeholder = h('p', { class: 'muted region-empty', text: 'Tap Split to make teams' });
+  const region = h('div', { class: 'scroll-region' }, placeholder);
   const actions = resultActions({ getText: () => lastCopy, onShare: () => share('teams', () => lastCopy, init.preset) });
 
   function split() {
@@ -42,28 +43,29 @@ export function render(root, params = {}) {
     if (mode === 'teams' && n > names.length) toast(`Only ${names.length} names — made ${names.length} teams`);
     const teams = splitTeams(names, mode, n);
     lastCopy = teams.map((t, i) => `Team ${i + 1}: ${t.join(', ')}`).join('\n');
-    result.replaceChildren(...teams.map((members, i) => {
+    const cards = teams.map((members, i) => {
       const hid = `team-h-${i}`;
-      return h('section', { class: 'group team-card' + (motionOn() ? ' reveal' : ''), attrs: { 'aria-labelledby': hid }, style: { animationDelay: `${i * 40}ms` } },
+      return h('section', { class: 'group team-card' + (decorMotion() ? ' reveal' : ''), attrs: { 'aria-labelledby': hid }, style: { animationDelay: `${i * 40}ms` } },
         h('h2', { class: 'team-head', attrs: { id: hid } },
           h('span', { class: 'team-dot', style: { background: PALETTE[i % PALETTE.length] }, attrs: { 'aria-hidden': 'true' } }),
           h('span', { text: `Team ${i + 1}` }),
           h('span', { class: 'muted team-count', text: String(members.length) })),
         h('ul', { class: 'team-list' }, ...members.map((m) => h('li', { text: m }))));
-    }));
-    result.hidden = false;
-    actions.hidden = false;
+    });
+    region.replaceChildren(h('div', { class: 'teams-grid' }, ...cards));
+    region.scrollTop = 0;
+    setShown(actions, true);
     click();
     vibrate(15);
     addHistory('teams', capHistory(lastCopy.split('\n').join(' · ')));
     announce(`Split into ${teams.length} teams`);
-    scrollToResult(result);
   }
 
   const fabEl = fab({ label: 'Split', icon: 'teams', onClick: split });
   root.append(
     topBar({ title: chrome.title, actions: chrome.actions }),
-    h('div', { class: 'content tool-stack' }, chrome.bar, source.el, settings, result, actions),
+    h('div', { class: 'content tool-stack' }, chrome.bar, source.el, settings, region,
+      h('div', { class: 'foot-row' }, actions)),
     fabEl);
   setPrimaryAction(split);
   if (init.edit) requestAnimationFrame(() => source.focus());

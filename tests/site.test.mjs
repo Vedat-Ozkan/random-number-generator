@@ -69,17 +69,44 @@ test('page data: 29 pages, groups, copy limits', () => {
   }
 });
 
-test('grouped nav has no self link; sw precache and manifest', () => {
-  for (const p of PAGES.filter((x) => x.tool && x.slug)) {
+const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+test('help dialog: SEO copy, links without self link, no below-the-fold', () => {
+  for (const p of PAGES.filter((x) => x.tool)) {
     const html = readFileSync(path.join(ROOT, p.slug, 'index.html'), 'utf8');
-    const nav = html.match(/<nav class="other-tools"[\s\S]*?<\/nav>/)[0];
-    assert.ok(nav.includes('<h3>'), 'grouped: ' + p.slug);
-    assert.ok(!nav.includes(`href="../${p.slug}/"`), 'no self link: ' + p.slug);
-    assert.ok(nav.includes('href="../">All tools'), 'all tools link: ' + p.slug);
+    assert.equal((html.match(/<dialog id="help"/g) || []).length, 1, 'one dialog: ' + p.slug);
+    const dlg = html.match(/<dialog id="help"[\s\S]*?<\/dialog>/)[0];
+    assert.ok(dlg.includes(`id="help-h1" tabindex="-1">${esc(p.h1)}</h1>`), 'h1: ' + p.slug);
+    for (const t of p.intro) assert.ok(dlg.includes(`<p>${esc(t)}</p>`), 'intro: ' + p.slug);
+    for (const [q] of p.faq) assert.ok(dlg.includes(`<h3>${esc(q)}</h3>`), 'faq: ' + p.slug);
+    const nav = dlg.match(/<nav class="help-links"[\s\S]*?<\/nav>/)[0];
+    if (p.slug) {
+      assert.ok(!nav.includes(`href="../${p.slug}/"`), 'no self link: ' + p.slug);
+      assert.ok(nav.includes('href="../">All tools'), 'all tools link: ' + p.slug);
+    } else {
+      for (const x of PAGES.filter((y) => y.tool && y.slug)) assert.ok(nav.includes(`href="${x.slug}/"`), 'root links ' + x.slug);
+    }
+    assert.ok(/class="help-foot"><a href="(\.\.\/)?privacy\/">Privacy<\/a>/.test(dlg), 'foot: ' + p.slug);
+    for (const bad of ['id="below"', 'class="about"', 'other-tools', 'site-footer']) assert.ok(!html.includes(bad), `${bad}: ${p.slug}`);
   }
+  const priv = readFileSync(path.join(ROOT, 'privacy/index.html'), 'utf8');
+  assert.ok(priv.includes('class="doc-page"') && !priv.includes('id="help"'));
+});
+
+test('JSON-LD FAQ questions equal page data', () => {
+  for (const p of PAGES.filter((x) => x.tool)) {
+    const html = readFileSync(path.join(ROOT, p.slug, 'index.html'), 'utf8');
+    const ld = JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+    const faq = ld['@graph'].find((n) => n['@type'] === 'FAQPage');
+    assert.deepEqual(faq.mainEntity.map((q) => q.name), p.faq.map(([q]) => q), p.slug);
+    assert.ok(ld['@graph'].some((n) => n['@type'] === 'WebApplication'));
+  }
+});
+
+test('sw precache and manifest', () => {
   const sw = readFileSync(path.join(ROOT, 'sw.js'), 'utf8');
-  for (const m of ['tools', 'parse', 'search', 'presets'].map((x) => `./js/${x}.js`)
-    .concat(['source', 'teams', 'shuffle', 'wheel', 'lottery', 'cards'].map((x) => `./js/screens/${x}.js`))) {
+  for (const m of ['tools', 'parse', 'search', 'presets', 'help'].map((x) => `./js/${x}.js`)
+    .concat(['source', 'teams', 'shuffle', 'wheel', 'lottery', 'cards', 'lists'].map((x) => `./js/screens/${x}.js`))) {
     assert.ok(sw.includes(`'${m}'`), 'precache ' + m);
   }
   for (const p of PAGES.filter((x) => x.slug)) assert.ok(sw.includes(`'./${p.slug}/'`), 'precache page ' + p.slug);
@@ -153,7 +180,7 @@ test('generated output with the committed config', () => {
     for (const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(m[1]);
     const canon = (html.match(/rel="canonical"/g) || []).length;
     if (empty) {
-      assert.ok(!/googlesyndication|adsbygoogle/.test(html), 'no ads markup: ' + f);
+      assert.ok(!/googlesyndication|adsbygoogle|ad-slot/.test(html), 'no ads markup: ' + f);
       assert.equal(canon, 0);
     } else if (!/privacy/.test(f)) {
       assert.equal(canon, 1);

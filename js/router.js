@@ -29,9 +29,9 @@ export function stripHashQuery() {
 
 export const navDepth = () => depth;
 
-export function back() {
+export function back(fallback) {
   if (depth > 0) history.back();
-  else replace('#/');
+  else replace(typeof fallback === 'string' ? fallback : '#/');
 }
 
 function match(pattern, path) {

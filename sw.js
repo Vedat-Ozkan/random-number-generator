@@ -1,5 +1,5 @@
 // CACHE and the PAGES block are written by `node tools/build-pages.mjs`. Do not edit by hand.
-const CACHE = 'random-44cbd2f7e0';
+const CACHE = 'random-0d65c3e9b9';
 const PRECACHE = [
   './',
   './index.html',
@@ -33,6 +33,8 @@ const PRECACHE = [
   './js/screens/wheel.js',
   './js/screens/lottery.js',
   './js/screens/cards.js',
+  './js/help.js',
+  './js/screens/lists.js',
   // BUILD:PAGES-START
   './random-number-generator/',
   './random-number-1-6/',

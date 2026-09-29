@@ -1,13 +1,14 @@
 // Bootstrap: theme, motion, router, keyboard, service worker.
 import { getState, subscribe, setSaveErrorHandler } from './store.js';
-import { startRouter, getPrimaryAction, beforeMount } from './router.js';
-import { getEntry, applyPreset, initBelow } from './site.js';
+import { startRouter, getPrimaryAction } from './router.js';
+import { getEntry, applyPreset, initHomeFlag } from './site.js';
 import { initAds } from './ads.js';
 import { toast, isMenuOpen, closeMenu, isResultOpen, closeResult } from './ui.js';
 import * as home from './screens/home.js';
 import * as number from './screens/number.js';
 import * as list from './screens/list.js';
 import * as listEdit from './screens/list-edit.js';
+import * as lists from './screens/lists.js';
 import * as dice from './screens/dice.js';
 import * as coin from './screens/coin.js';
 import * as lots from './screens/lots.js';
@@ -18,12 +19,13 @@ import * as lottery from './screens/lottery.js';
 import * as cards from './screens/cards.js';
 import * as settings from './screens/settings.js';
 
-export const VERSION = '3.0.0';
+export const VERSION = '4.0.0';
 
 const ROUTES = [
   { path: '/', screen: home },
   { path: '/number', screen: number },
   { path: '/number/p/:id', screen: number },
+  { path: '/lists', screen: lists },
   { path: '/list/new', screen: listEdit },
   { path: '/list/:id/edit', screen: listEdit },
   { path: '/list/:id', screen: list },
@@ -58,8 +60,8 @@ function applyTheme() {
 }
 
 function applyMotion() {
-  const off = !getState().settings.animations || motionQuery.matches;
-  document.documentElement.dataset.motion = off ? 'off' : 'on';
+  const level = !getState().settings.animations ? 'off' : motionQuery.matches ? 'reduced' : 'on';
+  document.documentElement.dataset.motion = level;
 }
 
 function applyAll() { applyTheme(); applyMotion(); }
@@ -70,13 +72,8 @@ subscribe(applyAll);
 setSaveErrorHandler(() => toast('Storage full — data not saved'));
 applyAll();
 
-// Top bar hairline appears once the page has scrolled.
-const html = document.documentElement;
-window.addEventListener('scroll', () => html.toggleAttribute('data-scrolled', window.scrollY > 4), { passive: true });
-beforeMount(() => html.removeAttribute('data-scrolled'));
-
 applyPreset();
-initBelow();
+initHomeFlag();
 startRouter(document.getElementById('app'), ROUTES, getEntry());
 initAds();
 

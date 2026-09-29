@@ -1,26 +1,16 @@
-import { h, icon, iconButton, topBar, openMenu, confirmDialog, promptDialog, announce, isMenuOpen } from '../ui.js';
-import { getState, subscribe, deleteList, renameList, renamePreset, deletePreset } from '../store.js';
+import { h, icon, iconButton, topBar, announce, isMenuOpen } from '../ui.js';
+import { getState, subscribe, renamePreset, deletePreset } from '../store.js';
 import { TOOLS, summary } from '../tools.js';
 import { buildIndex, search } from '../search.js';
+import { helpButton } from '../help.js';
+import { childRow, listChildren } from './lists.js';
 
-const COLLAPSE_AFTER = 5;
-const expanded = new Set(); // tool ids whose child rows are fully shown (session only)
-
-const plural = (n) => `${n} ${n === 1 ? 'item' : 'items'}`;
 const tile = (name) => h('span', { class: 'tile' }, icon(name));
 
 // Child rows (presets, or saved lists for the List tool) of a tool.
 function childrenOf(tool) {
+  if (tool.id === 'list') return listChildren();
   const st = getState();
-  if (tool.id === 'list') {
-    return st.lists.map((l) => ({
-      name: l.name, sub: plural(l.items.length), href: `#/list/${encodeURIComponent(l.id)}`,
-      editHref: `#/list/${encodeURIComponent(l.id)}/edit`,
-      rename: (n) => renameList(l.id, n),
-      remove: () => deleteList(l.id),
-      deleteMessage: `Delete list "${l.name}"?`,
-    }));
-  }
   return st.presets.filter((p) => p.tool === tool.id).map((p) => ({
     name: p.name, sub: summary(p.tool, p.config, st.lists), href: `#${tool.route}/p/${encodeURIComponent(p.id)}`,
     editHref: `#${tool.route}/p/${encodeURIComponent(p.id)}?edit=1`,
@@ -30,69 +20,6 @@ function childrenOf(tool) {
   }));
 }
 
-function childRow(c) {
-  const more = iconButton({
-    icon: 'more', label: `Options for ${c.name}`,
-    onClick: (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      openMenu(more, [
-        {
-          label: 'Rename',
-          onClick: async () => {
-            const n = await promptDialog({ title: 'Rename', label: 'Name', value: c.name, confirmLabel: 'Rename' });
-            if (n !== null) c.rename(n);
-          },
-        },
-        { label: 'Edit', onClick: () => { location.hash = c.editHref; } },
-        {
-          label: 'Delete', danger: true,
-          onClick: async () => { if (await confirmDialog({ message: c.deleteMessage })) c.remove(); },
-        },
-      ]);
-    },
-  });
-  more.setAttribute('aria-haspopup', 'menu');
-  return h('div', { class: 'child-row' },
-    h('a', { class: 'child-link', attrs: { href: c.href } },
-      h('span', { class: 'child-name', text: c.name }),
-      h('span', { class: 'child-sub', text: c.sub })),
-    more);
-}
-
-function toolBlock(t) {
-  const kids = h('div', { class: 'children' });
-  const head = t.route
-    ? h('a', { class: 'tool-row', attrs: { href: '#' + t.route } },
-      tile(t.icon), h('span', { class: 'row-label', text: t.label }), icon('chevron', 'chev'))
-    : h('div', { class: 'tool-row' },
-      tile(t.icon), h('span', { class: 'row-label', text: t.label }),
-      h('a', { class: 'icon-btn plus-btn', attrs: { href: '#/list/new', 'aria-label': 'New list' } }, icon('plus')));
-
-  function paint() {
-    const list = childrenOf(t);
-    if (!list.length) {
-      if (t.id === 'list') kids.replaceChildren(h('div', { class: 'child-row empty muted', text: 'No lists yet — tap + to create one' }));
-      else kids.replaceChildren();
-      return;
-    }
-    const open = expanded.has(t.id);
-    const shown = list.length > COLLAPSE_AFTER && !open ? list.slice(0, COLLAPSE_AFTER) : list;
-    const nodes = shown.map(childRow);
-    if (list.length > COLLAPSE_AFTER) {
-      const btn = h('button', {
-        class: 'child-more', attrs: { type: 'button', 'aria-expanded': String(open) },
-        text: open ? 'Show less' : `Show all (${list.length})`,
-        on: { click: () => { if (expanded.has(t.id)) expanded.delete(t.id); else expanded.add(t.id); paint(); } },
-      });
-      nodes.push(btn);
-    }
-    kids.replaceChildren(...nodes);
-  }
-  paint();
-  return { el: h('div', { class: 'tool-item' }, head, kids), paint };
-}
-
 function highlight(label, q) {
   const i = q ? label.toLowerCase().indexOf(q.toLowerCase()) : -1;
   if (i < 0) return [label];
@@ -100,13 +27,26 @@ function highlight(label, q) {
 }
 
 export function render(root) {
-  const blocks = TOOLS.map(toolBlock);
-  const group = (section) => h('div', { class: 'group' },
-    ...TOOLS.map((t, i) => (t.section === section ? blocks[i].el : null)));
-
+  const grid = h('nav', { class: 'tool-grid', attrs: { 'aria-label': 'Tools' } },
+    ...TOOLS.map((t) => h('a', { class: 'tool-tile', attrs: { href: '#' + t.route } }, tile(t.icon), h('span', { class: 'tool-tile-label', text: t.label }))));
+  const savedRegion = h('div', { class: 'scroll-region saved-region' });
   const sections = h('div', { class: 'home-sections' },
-    h('h2', { class: 'section-label', text: 'Tools' }), group('main'),
-    h('h2', { class: 'section-label', text: 'More tools' }), group('more'));
+    grid,
+    h('h2', { class: 'section-label', text: 'Saved' }));
+
+  function paintSaved() {
+    const top = savedRegion.scrollTop;
+    const groups = TOOLS.map((t) => [t, childrenOf(t)]).filter(([, kids]) => kids.length);
+    if (!groups.length) {
+      savedRegion.replaceChildren(h('p', { class: 'muted region-empty', text: 'Presets and lists you save appear here' }));
+      return;
+    }
+    savedRegion.replaceChildren(...groups.map(([t, kids]) => h('section', { class: 'saved-group', attrs: { 'aria-label': t.label } },
+      h('div', { class: 'saved-head' }, tile(t.icon), h('span', { text: t.label })),
+      ...kids.map(childRow))));
+    savedRegion.scrollTop = top;
+  }
+  paintSaved();
 
   const input = h('input', {
     attrs: {
@@ -120,7 +60,7 @@ export function render(root) {
   });
   clear.hidden = true;
   const searchEl = h('div', { class: 'search' }, icon('search', 'sm search-icon'), input, clear);
-  const results = h('div', { class: 'search-panel' });
+  const results = h('div', { class: 'search-panel scroll-region' });
   results.hidden = true;
 
   let announceTimer = 0;
@@ -150,6 +90,7 @@ export function render(root) {
     const q = input.value.trim();
     clear.hidden = !input.value;
     sections.hidden = !!q;
+    savedRegion.hidden = !!q;
     results.hidden = !q;
     if (!q) { clearTimeout(announceTimer); return; }
     const n = paintResults();
@@ -190,16 +131,16 @@ export function render(root) {
   window.addEventListener('keydown', onSlash);
 
   const unsub = subscribe(() => {
-    blocks.forEach((b) => b.paint());
+    paintSaved();
     if (input.value.trim()) paintResults();
   });
 
   root.append(
     topBar({
-      title: 'Random', showBack: false, large: true,
-      actions: [h('a', { class: 'icon-btn', attrs: { href: '#/settings', 'aria-label': 'Settings' } }, icon('settings'))],
+      title: 'Random', showBack: false, cls: 'home',
+      actions: [h('a', { class: 'icon-btn', attrs: { href: '#/settings', 'aria-label': 'Settings' } }, icon('settings')), helpButton('home')],
     }),
-    h('div', { class: 'content home-stack' }, searchEl, sections, results));
+    h('div', { class: 'content home-stack' }, searchEl, sections, savedRegion, results));
 
   return () => { window.removeEventListener('keydown', onSlash); unsub(); clearTimeout(announceTimer); };
 }

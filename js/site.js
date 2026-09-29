@@ -1,4 +1,4 @@
-// Landing-page support: entry route, presets, below-the-fold section.
+// Landing-page support: entry route, presets, Home flag.
 // Top-level code must not touch the DOM (node tests and the build import this file).
 import { getState, update } from './store.js';
 import { beforeMount, currentPath } from './router.js';
@@ -83,16 +83,8 @@ export function applyPreset() {
   }
 }
 
-// Shows the static #below section only on the page's own entry route and hides
-// the FAB while it is on screen.
-export function initBelow() {
-  const below = document.getElementById('below');
-  if (!below || !document.getElementById('app')) return;
+// Marks the Home route so the ad dock (Home only) can show without shifting layout.
+export function initHomeFlag() {
   const html = document.documentElement;
-  beforeMount(() => html.toggleAttribute('data-off-entry', currentPath() !== getEntry()));
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver((entries) => {
-      html.toggleAttribute('data-below', entries.some((e) => e.isIntersecting));
-    }, { rootMargin: '0px 0px -120px 0px' }).observe(below);
-  }
+  beforeMount(() => html.toggleAttribute('data-home', currentPath() === '/'));
 }

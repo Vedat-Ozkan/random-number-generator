@@ -366,7 +366,7 @@ export const PAGES = [
     h1: 'Yes or no?',
     intro: [
       'Ask your question, then tap the button to get a yes or a no. Both answers are equally likely.',
-      'The answers come from a list you can edit: add Maybe or Ask again later through the ⋮ menu, or try the Random answer list on the home screen.',
+      'The answers come from a list you can edit: add Maybe or Ask again later through the ⋮ menu, or try the Magic 8-ball list in Lists.',
     ],
     faq: [
       ['Is it really 50/50?', 'Yes. Each tap picks Yes or No with equal chance.'],

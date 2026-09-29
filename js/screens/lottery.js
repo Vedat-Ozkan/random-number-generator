@@ -1,4 +1,4 @@
-import { h, topBar, fab, paramsPill, openSheet, stepper, chipRow, switchRow, announce, resultActions, scrollToResult, capHistory } from '../ui.js';
+import { h, topBar, fab, paramsPill, openSheet, stepper, chipRow, switchRow, announce, resultActions, setShown, capHistory } from '../ui.js';
 import { getState, update, addHistory } from '../store.js';
 import { drawLottery } from '../rng.js';
 import { click, vibrate } from '../feedback.js';
@@ -40,8 +40,11 @@ export function render(root, params = {}) {
     onPick: (i) => patch({ bonusSame: false, ...FORMATS[i][1] }),
   });
 
+  formats.el.classList.add('nowrap');
   const result = h('div', { class: 'lottery-lines', attrs: { hidden: true } });
   const foot = h('p', { class: 'muted hint lottery-foot', attrs: { hidden: true }, text: "Random picks don't change your odds. Play responsibly." });
+  const placeholder = h('p', { class: 'muted region-empty', text: 'Tap Draw for numbers' });
+  const region = h('div', { class: 'scroll-region' }, placeholder, result, foot);
   const actions = resultActions({ getText: () => lastCopy, onShare: () => share('lottery', () => lastCopy, init.preset) });
 
   const ball = (n, bonus) => h('span', { class: 'ball' + (bonus ? ' bonus' : ''), attrs: { 'aria-hidden': 'true' }, text: String(n) });
@@ -64,13 +67,14 @@ export function render(root, params = {}) {
     void result.offsetWidth;
     result.classList.add('reveal');
     result.hidden = false;
+    placeholder.hidden = true;
     foot.hidden = false;
-    actions.hidden = false;
+    region.scrollTop = 0;
+    setShown(actions, true);
     click();
     vibrate(15);
     addHistory('lottery', capHistory(lines.map(asText).join(' | ')));
     announce(lines.map((l, i) => `Line ${i + 1}: ${l.main.join(', ')}` + (l.bonus.length ? `, bonus ${l.bonus.join(', ')}` : '')).join('. '));
-    scrollToResult(result);
   }
 
   function openParams() {
@@ -109,7 +113,8 @@ export function render(root, params = {}) {
   const fabEl = fab({ label: 'Draw', icon: 'lottery', onClick: draw });
   root.append(
     topBar({ title: chrome.title, actions: chrome.actions }),
-    h('div', { class: 'content tool-stack' }, chrome.bar, formats.el, result, actions, foot, h('div', { class: 'pill-wrap' }, paramsPill(openParams))),
+    h('div', { class: 'content tool-stack' }, chrome.bar, formats.el, region,
+      h('div', { class: 'foot-row' }, actions, paramsPill(openParams))),
     fabEl);
   setPrimaryAction(draw);
   if (init.edit) requestAnimationFrame(openParams);

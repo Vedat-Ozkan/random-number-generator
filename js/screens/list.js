@@ -1,22 +1,23 @@
-import { h, topBar, historyButton, soundToggle, iconButton, fab, paramsPill, noRepeatCard, openSheet, stepper, showResult, toast, openMenu, confirmDialog } from '../ui.js';
+import { h, topBar, historyButton, soundMenuItem, iconButton, fab, paramsPill, noRepeatCard, openSheet, stepper, showResult, toast, openMenu, confirmDialog } from '../ui.js';
 import { getState, update, addHistory, deleteList, ensureBuiltinList } from '../store.js';
 import { draw, drawWeighted } from '../rng.js';
 import { parseWeighted } from '../parse.js';
 import { shareList } from '../presets.js';
 import { click, vibrate } from '../feedback.js';
-import { setPrimaryAction, replace } from '../router.js';
+import { setPrimaryAction, back } from '../router.js';
 import { openHistorySheet } from './history.js';
+import { helpButton } from '../help.js';
 
 export function render(root, { id }) {
   const find = () => getState().lists.find((l) => l.id === id) || ensureBuiltinList(id);
   if (!find()) {
     toast('List not found');
-    replace('#/');
+    back('#/lists');
     return;
   }
 
   let picked = new Set();
-  const itemsBox = h('div', { class: 'items' });
+  const itemsBox = h('div', { class: 'items scroll-region' });
   const emptyBox = h('div', { class: 'empty-list' },
     h('p', { class: 'muted', text: 'This list is empty' }),
     h('a', { class: 'btn filled', attrs: { href: `#/list/${encodeURIComponent(id)}/edit` }, text: 'Edit list' }));
@@ -92,6 +93,7 @@ export function render(root, { id }) {
   const menuBtn = iconButton({
     icon: 'more', label: 'List options',
     onClick: () => openMenu(menuBtn, [
+      soundMenuItem(),
       { label: 'Edit list', onClick: () => { location.hash = `#/list/${encodeURIComponent(id)}/edit`; } },
       { label: 'Share list…', onClick: () => shareList(find().name, find().items) },
       {
@@ -99,7 +101,7 @@ export function render(root, { id }) {
         onClick: async () => {
           if (await confirmDialog({ message: `Delete list "${find().name}"?` })) {
             deleteList(id);
-            replace('#/');
+            back('#/lists');
           }
         },
       },
@@ -110,7 +112,7 @@ export function render(root, { id }) {
   const fabEl = fab({ label: 'Generate', onClick: generate, disabled: !find().items.length });
 
   root.append(
-    topBar({ title: find().name, actions: [historyButton(() => openHistorySheet(`list:${id}`, find().name)), soundToggle(), menuBtn] }),
+    topBar({ title: find().name, actions: [historyButton(() => openHistorySheet(`list:${id}`, find().name)), menuBtn, helpButton('list', { title: find().name })] }),
     h('div', { class: 'content' }, itemsBox, pool.el, paramsPill(openParams)),
     fabEl);
   refresh();
