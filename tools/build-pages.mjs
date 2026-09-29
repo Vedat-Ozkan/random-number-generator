@@ -83,7 +83,7 @@ function jsonLd(p) {
     '@type': 'FAQPage',
     mainEntity: p.faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
   });
-  if (!p.slug && SITE_URL) graph.push({ '@type': 'WebSite', name: SITE_NAME, url: SITE_URL });
+  if (!p.slug && SITE_URL) graph.push({ '@type': 'WebSite', name: SITE_NAME, alternateName: ['Random Tools', 'Random Number Generator'], url: SITE_URL });
   return JSON.stringify({ '@context': 'https://schema.org', '@graph': graph }).replace(/</g, '\\u003c');
 }
 

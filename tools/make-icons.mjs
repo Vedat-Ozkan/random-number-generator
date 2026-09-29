@@ -141,7 +141,27 @@ const OUTPUTS = [
   ['icon-512.png', 512, { rounded: true, glyphScale: 1 }],
   ['icon-maskable-512.png', 512, { rounded: false, glyphScale: 0.8 }],
   ['apple-touch-icon.png', 180, { rounded: false, glyphScale: 0.8 }],
+  ['icon-48.png', 48, { rounded: true, glyphScale: 1 }],
 ];
+
+// favicon.ico with embedded PNGs (Google's favicon crawler requests /favicon.ico).
+function encodeIco(sizes) {
+  const pngs = sizes.map((s) => encodePng(s, render(s, { rounded: true, glyphScale: 1 })));
+  const head = Buffer.alloc(6 + 16 * pngs.length);
+  head.writeUInt16LE(1, 2); // type: icon
+  head.writeUInt16LE(pngs.length, 4);
+  let offset = head.length;
+  pngs.forEach((png, i) => {
+    const e = 6 + 16 * i;
+    head[e] = sizes[i]; head[e + 1] = sizes[i]; // width, height (<256)
+    head.writeUInt16LE(1, e + 4); // planes
+    head.writeUInt16LE(32, e + 6); // bits per pixel
+    head.writeUInt32LE(png.length, e + 8);
+    head.writeUInt32LE(offset, e + 12);
+    offset += png.length;
+  });
+  return Buffer.concat([head, ...pngs]);
+}
 
 // icon.svg uses the same geometry as the PNG rasterizer.
 function svgIcon() {
@@ -170,3 +190,5 @@ for (const [name, size, opts] of OUTPUTS) {
   writeFileSync(path.join(OUT, name), encodePng(size, render(size, opts)));
   console.log('wrote', name);
 }
+writeFileSync(path.join(OUT, '..', 'favicon.ico'), encodeIco([16, 32, 48]));
+console.log('wrote favicon.ico');
