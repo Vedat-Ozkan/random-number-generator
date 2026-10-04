@@ -1,5 +1,5 @@
 // App state: one localStorage key, normalized on load.
-import { CONFIG_DEFAULTS, CONFIG_TOOLS, cleanConfig, BUILTIN_LISTS } from './tools.js';
+import { CONFIG_DEFAULTS, CONFIG_TOOLS, cleanConfig, BUILTIN_LISTS, extractConfig, configKey } from './tools.js';
 import { randInt } from './rng.js';
 
 const KEY = 'random:state';
@@ -78,9 +78,11 @@ function normalizePresets(arr) {
     if ((perTool[p.tool] || 0) >= MAX_PRESETS_PER_TOOL) continue;
     ids.add(p.id);
     perTool[p.tool] = (perTool[p.tool] || 0) + 1;
+    const draft = isObj(p.draft) ? cleanConfig(p.tool, p.draft) : null;
     out.push({
       id: p.id, tool: p.tool, name,
       config: cleanConfig(p.tool, p.config, { lenient: true }),
+      ...(draft ? { draft } : {}),
       t: typeof p.t === 'number' && Number.isFinite(p.t) ? p.t : 0,
     });
   }
@@ -186,6 +188,9 @@ let state = normalize(readStorage());
 const subscribers = new Set();
 let saveErrorHandler = null;
 let saveErrorShown = false;
+let activePresetId = null;
+
+export function setActivePreset(id) { activePresetId = id; }
 
 export function setSaveErrorHandler(fn) { saveErrorHandler = fn; }
 
@@ -204,6 +209,13 @@ export function getState() { return state; }
 
 export function update(fn) {
   fn(state);
+  // Keep working edits across sessions without replacing the saved baseline.
+  const preset = state.presets.find((p) => p.id === activePresetId);
+  if (preset) {
+    const config = extractConfig(preset.tool, state[preset.tool]);
+    if (configKey(preset.tool, config) === configKey(preset.tool, preset.config)) delete preset.draft;
+    else preset.draft = config;
+  }
   save();
   for (const s of [...subscribers]) s(state);
 }
@@ -291,4 +303,5 @@ export function ensureBuiltinList(id) {
 export function clearAll() {
   try { localStorage.removeItem(KEY); } catch { /* ignore */ }
   state = normalize(null);
+  activePresetId = null;
 }

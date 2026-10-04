@@ -3,6 +3,7 @@ import { h, iconButton, historyButton, soundMenuItem, openMenu, promptDialog, co
 import {
   getState, update, subscribe, getPreset, addPreset, updatePreset, renamePreset, deletePreset,
   MAX_PRESETS, MAX_PRESETS_PER_TOOL,
+  setActivePreset,
 } from './store.js';
 import {
   toolById, SCHEMAS, extractConfig, configKey, applyConfig, fromParams, toParams, summary,
@@ -20,6 +21,7 @@ function applyIfDiffers(tool, cfg) {
 
 // Call first in render(). Returns null if it redirected.
 export function initTool(tool, params = {}) {
+  setActivePreset(null);
   const t = toolById(tool);
   let preset = null;
   if (params.id) {
@@ -29,7 +31,8 @@ export function initTool(tool, params = {}) {
       replace('#' + t.route);
       return null;
     }
-    applyIfDiffers(tool, preset.config);
+    applyIfDiffers(tool, preset.draft || preset.config);
+    setActivePreset(preset.id);
   } else if (SCHEMAS[tool]) {
     const q = hashQuery();
     if (SCHEMAS[tool].some((f) => q.has(f[0]))) {
@@ -189,6 +192,6 @@ export function toolChrome({ tool, preset, title, historyKey, shareText }) {
     title: preset ? preset.name : title,
     actions: [historyButton(() => openHistorySheet(historyKey, t.label)), menuBtn, helpButton(tool)],
     bar,
-    cleanup: unsub,
+    cleanup: () => { setActivePreset(null); unsub(); },
   };
 }
