@@ -97,7 +97,7 @@ export function render(root, params = {}) {
         lines.set(s.lines);
         const off = s.bonusK === 0 || s.bonusSame;
         poolRow.classList.toggle('disabled', off);
-        if (off) bonusPool.setRange(s.bonusN, s.bonusN); // locks both buttons
+        if (off) bonusPool.setRange(s.bonusN, s.bonusN);
         else bonusPool.setRange(1, 99);
         bonusPool.set(s.bonusN);
       },

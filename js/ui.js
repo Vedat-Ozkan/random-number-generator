@@ -1,4 +1,3 @@
-// DOM helpers and shared components.
 import { getState, update } from './store.js';
 import { back, beforeMount } from './router.js';
 import { parseItems, splitImport } from './parse.js';
@@ -6,8 +5,6 @@ import { MAX_TEXT } from './tools.js';
 
 export const PALETTE = ['#4F46E5', '#0F766E', '#B45309', '#BE185D', '#1D4ED8', '#15803D', '#7C3AED', '#C2410C', '#334155', '#9F1239'];
 
-// 'on' | 'reduced' | 'off'. Use motionLevel() for essential motion (spin, flip, roll);
-// decorMotion() for everything that is only decoration.
 export const motionLevel = () => {
   const m = document.documentElement.dataset.motion;
   return m === 'off' || m === 'reduced' ? m : 'on';
@@ -17,7 +14,6 @@ export const decorMotion = () => motionLevel() === 'on';
 let uidCounter = 0;
 const uid = (p = 'u') => `${p}${++uidCounter}`;
 
-/* ---------- h() ---------- */
 export function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);
   const { class: cls, attrs, on, text, style } = props || {};
@@ -47,7 +43,6 @@ function append(el, children) {
   }
 }
 
-/* ---------- icons (static SVG strings only) ---------- */
 const svg = (inner) =>
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
   inner + '</svg>';
@@ -88,7 +83,7 @@ export const icons = {
 
 export function icon(name, cls = '') {
   const s = h('span', { class: ('icon ' + cls).trim(), attrs: { 'aria-hidden': 'true' } });
-  s.innerHTML = icons[name]; // static, trusted SVG only
+  s.innerHTML = icons[name];
   return s;
 }
 
@@ -101,7 +96,6 @@ export function iconButton({ icon: name, label, onClick, cls = '', pressed }) {
   return b;
 }
 
-/* ---------- top bar / FAB / pill ---------- */
 export function topBar({ title, showBack = true, actions = [], cls = '' }) {
   return h('header', { class: ('topbar ' + cls).trim() },
     showBack ? iconButton({ icon: 'back', label: 'Back', onClick: back, cls: 'topbar-back' }) : null,
@@ -113,7 +107,6 @@ export function historyButton(onClick) {
   return iconButton({ icon: 'history', label: 'History', onClick });
 }
 
-// First item of the tool "⋮" menus. Read at open time so the label is current.
 export function soundMenuItem() {
   const on = getState().settings.sound;
   return {
@@ -138,7 +131,6 @@ export function paramsPill(onClick) {
     icon('tune'), h('span', { text: 'Parameters' }));
 }
 
-/* ---------- toast + live region ---------- */
 let toastEl = null;
 let toastTimer = 0;
 
@@ -149,15 +141,14 @@ export function toast(text) {
   }
   toastEl.textContent = text;
   try {
-    // Top layer, so it stays visible above modal dialogs.
     if (toastEl.matches(':popover-open')) toastEl.hidePopover();
     toastEl.showPopover();
-  } catch { /* popover API unsupported */ }
+  } catch { }
   toastEl.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => {
     toastEl.classList.remove('show');
-    try { toastEl.hidePopover(); } catch { /* ignore */ }
+    try { toastEl.hidePopover(); } catch { }
   }, 2500);
 }
 
@@ -187,7 +178,6 @@ export async function copyText(text) {
   }
 }
 
-// "Paste" button: appends clipboard items (comma, semicolon, tab or newline separated) as lines.
 export function pasteButton(textarea, maxItems = 500) {
   return h('button', {
     class: 'btn sm tonal', attrs: { type: 'button' },
@@ -213,7 +203,6 @@ export function pasteButton(textarea, maxItems = 500) {
   }, icon('paste', 'sm'), h('span', { text: 'Paste' }));
 }
 
-/* ---------- switch / stepper ---------- */
 export function makeSwitch({ checked = false, labelledby, label }) {
   const b = h('button', {
     class: 'switch',
@@ -277,8 +266,6 @@ export function stepper({ label, value, min, max, onChange, format = String }) {
   };
 }
 
-/* ---------- segmented control / chips ---------- */
-// options: [[value, label]]. Roving tabindex, arrow keys; disabled values use aria-disabled.
 export function segmented({ label, options, value, onChange }) {
   let cur = value;
   const disabled = new Set();
@@ -323,7 +310,6 @@ export function segmented({ label, options, value, onChange }) {
   };
 }
 
-// A row of toggle chips (aria-pressed). options: [[value, label]]; `isOn(value)` decides the pressed state.
 export function chipRow({ label, options, isOn, onPick }) {
   const btns = options.map(([v, text]) => h('button', {
     class: 'chip', attrs: { type: 'button', 'aria-pressed': 'false' }, text,
@@ -335,7 +321,6 @@ export function chipRow({ label, options, isOn, onPick }) {
   return { el, paint };
 }
 
-/* ---------- popover menu ---------- */
 let menuEl = null;
 let lastMenuAnchor = null;
 let menuClosedAt = 0;
@@ -346,7 +331,6 @@ function onMenuPointerDown(e) {
   if (menuEl && !menuEl.contains(e.target)) closeMenu(false, true);
 }
 
-// `outside`: closed by a press outside the menu; only then is a quick re-tap on the anchor a toggle-off.
 export function closeMenu(restoreFocus = false, outside = false) {
   if (!menuEl) return;
   document.removeEventListener('pointerdown', onMenuPointerDown, true);
@@ -383,7 +367,6 @@ export function openMenu(anchor, items) {
   menuEl.querySelector('button:not([disabled])')?.focus({ preventScroll: true });
 }
 
-/* ---------- bottom sheet / confirm ---------- */
 export function openSheet({ title, subtitle, body, actions, onClose }) {
   const dlg = h('dialog', { class: 'sheet', attrs: { 'aria-label': title } });
   const done = h('button', { class: 'btn filled', attrs: { type: 'button' }, text: 'Done', on: { click: () => dlg.close() } });
@@ -413,7 +396,6 @@ export function confirmDialog({ message, confirmLabel = 'Delete', danger = true 
   });
 }
 
-// Resolves to the trimmed text, or null on cancel.
 export function promptDialog({ title, label, value = '', confirmLabel = 'Save' }) {
   return new Promise((resolve) => {
     const tid = uid('pd');
@@ -441,7 +423,6 @@ export function promptDialog({ title, label, value = '', confirmLabel = 'Save' }
   });
 }
 
-/* ---------- No repeat card ---------- */
 export function noRepeatCard({
   onToggle, onReset, label = 'No repeat', resetLabel = 'Reset pool', resetToast = 'Pool reset',
   format = ({ drawn, total }) => `${drawn} / ${total}`,
@@ -473,7 +454,6 @@ export function noRepeatCard({
   };
 }
 
-/* ---------- result overlay ---------- */
 let ov = null;
 let card = null;
 let cap = null;
@@ -499,7 +479,6 @@ function ensureOverlay() {
 
 export const isResultOpen = () => !!ov && !ov.hidden;
 
-// Keep keyboard/AT focus out of the page behind the modal overlay; the FAB stays live.
 function setBackgroundInert(on) {
   const app = document.getElementById('app');
   for (const el of app ? app.children : []) {
@@ -532,7 +511,7 @@ export function showResult({ values, lines = false, caption = '', onAgain, onSha
   ov.classList.toggle('enter', !wasOpen);
   const inner = body.firstChild;
   inner.classList.remove('reveal');
-  void inner.offsetWidth; // restart animation
+  void inner.offsetWidth;
   inner.classList.add('reveal');
   if (!wasOpen) card.focus({ preventScroll: true });
   announce(cur.text.replace(/\n/g, ', '));
@@ -553,9 +532,6 @@ export function closeAllOverlays() {
 
 beforeMount(closeAllOverlays);
 
-/* ---------- inline result helpers (Teams, Shuffle, Wheel, Lottery, Cards) ---------- */
-// Copy / Share buttons under an inline result. The row always takes its space; it is only
-// invisible until setShown(el, true), so showing a result never moves the layout.
 export function resultActions({ getText, onShare }) {
   return h('div', { class: 'inline-actions idle' },
     h('button', { class: 'btn sm tonal', attrs: { type: 'button', 'aria-label': 'Copy' }, on: { click: () => copyText(getText()) } }, icon('copy', 'sm'), h('span', { text: 'Copy' })),
@@ -566,9 +542,6 @@ export const setShown = (el, on) => el.classList.toggle('idle', !on);
 
 export const capHistory = (text) => (text.length > 1000 ? text.slice(0, 999) + '…' : text);
 
-// Largest tile size in [min, max] such that n tiles (height = size * aspect) fit the box
-// without scrolling. Returns { cols, size, fits }; when nothing fits at `min`, uses `min`
-// (fits: false) and the caller lets the box scroll.
 export function fitTiles(box, n, { aspect = 1, gap = 8, min = 40, max = 96 } = {}) {
   const cs = getComputedStyle(box);
   const w = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
@@ -582,7 +555,6 @@ export function fitTiles(box, n, { aspect = 1, gap = 8, min = 40, max = 96 } = {
   return best || { cols: Math.max(1, Math.min(n, Math.floor((w + gap) / (min + gap)))), size: min, fits: false };
 }
 
-// Re-runs `apply` whenever the box is resized. Returns a disconnect function.
 export function observeSize(box, apply) {
   if (typeof ResizeObserver === 'undefined') { apply(); return () => {}; }
   const ro = new ResizeObserver(() => { if (box.clientWidth && box.clientHeight) apply(); });

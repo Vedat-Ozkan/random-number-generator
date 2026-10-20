@@ -1,4 +1,3 @@
-// Pure tool registry (no DOM, no store): schemas, config cleaning, presets, share params, search data.
 import { parseItems, formatDice } from './parse.js';
 
 export const TOOLS = [
@@ -28,7 +27,6 @@ const sourceFields = (text) => [
   ['text', 'text', text],
 ];
 
-// Field: [key, 'int', lo, hi, def] | [key, 'bool', def] | [key, 'enum', values, def] | [key, 'id', def] | [key, 'text', def]
 export const SCHEMAS = {
   number: [
     ['from', 'int', -B, B, 1], ['to', 'int', -B, B, 10], ['count', 'int', 1, 100, 1],
@@ -103,7 +101,6 @@ export function extractConfig(tool, section) {
 
 export const configKey = (tool, config) => JSON.stringify(cleanConfig(tool, config, { lenient: true }));
 
-// Mutates a working section to match `config`. Returns true if anything changed.
 export function applyConfig(tool, section, config) {
   const cfg = cleanConfig(tool, config, { lenient: true });
   let changed = false;
@@ -124,7 +121,6 @@ export function applyConfig(tool, section, config) {
   return true;
 }
 
-/* ---------- summaries ---------- */
 const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 
 function sourceSummary(config, lists, unit) {
@@ -154,7 +150,6 @@ export function summary(tool, config, lists) {
   }
 }
 
-/* ---------- share params ---------- */
 const SHARE_LINES = 100;
 const SHARE_CHARS = 2000;
 
@@ -214,7 +209,6 @@ export function fromParams(tool, q) {
   return cleanConfig(tool, obj);
 }
 
-/* ---------- builtin lists ---------- */
 const seq = (s) => s.split(', ');
 export const BUILTIN_LISTS = {
   'preset-names': {
@@ -249,7 +243,6 @@ export const BUILTIN_LISTS = {
   },
 };
 
-/* ---------- search data ---------- */
 export const TOOL_KEYWORDS = {
   number: ['random number', 'rng', 'pick a number', 'range', 'digit', 'integer'],
   list: ['list', 'lists', 'saved lists', 'name picker', 'names', 'pick', 'choose', 'random item', 'picker'],

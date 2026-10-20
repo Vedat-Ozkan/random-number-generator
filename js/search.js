@@ -1,4 +1,3 @@
-// Pure search: normalize text, build an index from state, rank matches.
 import { TOOLS, TOOL_KEYWORDS, BUILTIN_LISTS, SHORTCUTS, summary, toolById } from './tools.js';
 
 export const norm = (s) => String(s).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();

@@ -1,5 +1,3 @@
-// Shared items source for Teams, Shuffle and Wheel: a one-line summary row that opens an
-// "Items" sheet (Paste | Saved list).
 import { h, segmented, pasteButton, openSheet } from '../ui.js';
 import { getState, update } from '../store.js';
 import { parseItems, parseList } from '../parse.js';
@@ -26,7 +24,6 @@ export function sourceSummary({ tool, noun = 'items', cap = 0, onChange = () => 
   }
   const currentText = () => (pending !== null ? pending : sec().text);
 
-  /* ---------- summary row ---------- */
   const titleEl = h('span', { class: 'source-title' });
   const subEl = h('span', { class: 'source-sub' });
   const el = h('button', { class: 'card source-row', attrs: { type: 'button', 'aria-haspopup': 'dialog' }, on: { click: () => openEditor() } },
@@ -53,7 +50,6 @@ export function sourceSummary({ tool, noun = 'items', cap = 0, onChange = () => 
     el.setAttribute('aria-label', `${titleEl.textContent}. ${sub}. Edit ${noun}`);
   }
 
-  /* ---------- items sheet ---------- */
   function openEditor() {
     const seg = segmented({
       label: 'Items source', options: [['paste', 'Paste'], ['list', 'Saved list']], value: sec().source,

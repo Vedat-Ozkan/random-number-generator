@@ -8,7 +8,6 @@ import { sourceSummary } from './source.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const MAX_ITEMS = 100;
-// Essential motion (Web Animations API, so CSS motion rules never affect it).
 const SPIN = {
   on: { ms: 4400, turns: 6, easing: 'cubic-bezier(.12,.72,.14,1)' },
   reduced: { ms: 1800, turns: 2, easing: 'cubic-bezier(.25,.6,.3,1)' },
@@ -22,7 +21,6 @@ const svgEl = (tag, attrs = {}, text) => {
   return el;
 };
 const f = (n) => Number(n.toFixed(3));
-// Point at clockwise angle `deg` from 12 o'clock, radius r.
 const pt = (deg, r) => [f(r * Math.sin((deg * Math.PI) / 180)), f(-r * Math.cos((deg * Math.PI) / 180))];
 const LABEL_OUTER = 92;
 const LABEL_INNER = 30;
@@ -32,9 +30,9 @@ export function render(root, params = {}) {
   if (!init) return;
   let lastText = '';
   let items = [];
-  let segs = []; // [{ start, width }]
+  let segs = [];
   let rotation = 0;
-  let spinning = null; // { finish }
+  let spinning = null;
   let anim = null;
   const chrome = toolChrome({ tool: 'wheel', preset: init.preset, title: 'Wheel', historyKey: 'wheel', shareText: () => (lastText ? `Wheel: ${lastText}` : '') });
 
@@ -49,7 +47,7 @@ export function render(root, params = {}) {
   function finishNow() {
     anim?.cancel();
     anim = null;
-    spinning?.finish(true); // silent: no sound, history or announcement
+    spinning?.finish(true);
   }
 
   function rebuild() {
@@ -101,15 +99,14 @@ export function render(root, params = {}) {
     fitQueue.forEach(([el, text]) => fitLabel(el, text));
   }
 
-  // Keeps each label between the hub (r~30) and the rim (r~92).
   function fitLabel(el, text) {
     const room = LABEL_OUTER - LABEL_INNER;
     let len = 0;
     try { len = el.getComputedTextLength(); } catch { return; }
-    if (len === 0 || len <= room) return; // 0: not rendered, keep as is
+    if (len === 0 || len <= room) return;
     let lo = 1;
     let hi = text.length - 1;
-    while (lo < hi) { // longest prefix (+ ellipsis) that fits
+    while (lo < hi) {
       const mid = Math.ceil((lo + hi) / 2);
       el.textContent = text.slice(0, mid).trimEnd() + '\u2026';
       if (el.getComputedTextLength() <= room) lo = mid; else hi = mid - 1;
@@ -120,7 +117,7 @@ export function render(root, params = {}) {
   function spin() {
     if (spinning || items.length < 2) return;
     const weights = items.map((it) => it.weight);
-    const i = weightedIndex(weights); // decided by crypto RNG before any animation
+    const i = weightedIndex(weights);
     const { start, width } = segs[i];
     const target = start + width * (0.15 + (0.7 * randInt(0, 1000)) / 1000);
     const delta = ((((-target - rotation) % 360) + 360) % 360);
@@ -128,7 +125,7 @@ export function render(root, params = {}) {
     const { ms, turns, easing } = SPIN[level] || SPIN.on;
     const prev = rotation;
     rotation += 360 * turns + delta;
-    svg.style.transform = `rotate(${rotation}deg)`; // commit the end state first
+    svg.style.transform = `rotate(${rotation}deg)`;
     resultEl.textContent = '';
     setShown(actions, false);
     const text = items[i].text;
@@ -153,8 +150,8 @@ export function render(root, params = {}) {
     click();
     if (level === 'off' || !svg.animate) { finish(); return; }
     anim = svg.animate([{ transform: `rotate(${prev}deg)` }, { transform: `rotate(${rotation}deg)` }], { duration: ms, easing });
-    anim.finished.then(() => finish(), () => {}); // cancel() rejects: ignore
-    timer = setTimeout(() => finish(), ms + 300); // safety net (hidden tab, etc.)
+    anim.finished.then(() => finish(), () => {});
+    timer = setTimeout(() => finish(), ms + 300);
   }
 
   root.append(

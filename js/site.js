@@ -1,5 +1,3 @@
-// Landing-page support: entry route, presets, Home flag.
-// Top-level code must not touch the DOM (node tests and the build import this file).
 import { getState, update } from './store.js';
 import { beforeMount, currentPath } from './router.js';
 import { SCHEMAS, CONFIG_DEFAULTS, cleanConfig, extractConfig, applyConfig } from './tools.js';
@@ -14,7 +12,6 @@ export function getEntry() {
   return typeof e === 'string' && /^\/[a-z0-9\/-]*$/.test(e) ? e : '/';
 }
 
-// Pure: returns a validated preset object or null. Never throws.
 export function parsePreset(json) {
   try {
     const raw = typeof json === 'string' ? JSON.parse(json) : json;
@@ -35,7 +32,6 @@ export function parsePreset(json) {
       return { list: { id, name: name.trim().slice(0, 60), items: clean } };
     }
 
-    // Tool shapes: exactly one top-level key, a partial config with schema keys only.
     const keys = Object.keys(raw);
     if (keys.length === 1 && TOOL_PRESETS.includes(keys[0])) {
       const tool = keys[0];
@@ -53,7 +49,6 @@ export function parsePreset(json) {
   }
 }
 
-// Applies data-preset on a fresh landing (empty hash) only.
 export function applyPreset() {
   if (location.hash !== '' && location.hash !== '#') return;
   const preset = parsePreset(document.documentElement.dataset.preset ?? '');
@@ -83,7 +78,6 @@ export function applyPreset() {
   }
 }
 
-// Marks the Home route so the ad dock (Home only) can show without shifting layout.
 export function initHomeFlag() {
   const html = document.documentElement;
   beforeMount(() => html.toggleAttribute('data-home', currentPath() === '/'));

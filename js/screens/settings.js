@@ -18,7 +18,6 @@ export function render(root) {
     label, hint, checked: s[key], onChange: (v) => update((st) => { st.settings[key] = v; }),
   });
 
-  // Animations hint follows the OS reduced-motion setting, live.
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const anim = toggle('animations', 'Animations');
   const paintAnim = () => anim.setHint(reduce.matches
@@ -66,7 +65,6 @@ function tipCard() {
         h('div', { class: 'row-hint', text: 'Support this free tool' }))));
 }
 
-// Hidden owner switch: tap the version line 5 times within 3 seconds.
 function versionLine() {
   const taps = [];
   return h('p', {

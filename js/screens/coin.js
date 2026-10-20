@@ -70,7 +70,6 @@ export function render(root) {
     addHistory('coin', cap(result));
   }
 
-  // Essential motion via the Web Animations API (CSS motion rules never affect it).
   const FLIP = {
     on: { ms: 900, turns: 5, easing: 'cubic-bezier(.2,.7,.2,1)' },
     reduced: { ms: 600, turns: 2, easing: 'cubic-bezier(.25,.6,.3,1)' },
@@ -94,7 +93,7 @@ export function render(root) {
     const { ms, turns, easing } = FLIP[level] || FLIP.on;
     const prev = rot;
     rot += 360 * turns + delta;
-    setRot(rot); // commit the end state first
+    setRot(rot);
     if (decorMotion()) {
       stage.classList.remove('arc');
       void stage.offsetWidth;

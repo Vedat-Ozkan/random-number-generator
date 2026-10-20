@@ -1,4 +1,3 @@
-// Run: node tests/presets.test.mjs
 import assert from 'node:assert/strict';
 import { CONFIG_DEFAULTS, applyConfig } from '../js/tools.js';
 
@@ -25,7 +24,6 @@ update((s) => {
 assert.equal(getPreset(first).config.noRepeat, false);
 assert.equal(getPreset(first).draft.noRepeat, true);
 
-// A fresh store instance reads the actual saved localStorage payload.
 const reloaded = await import('../js/store.js?reloaded');
 assert.equal(reloaded.getPreset(first).draft.noRepeat, true);
 assert.equal(reloaded.getState().number.noRepeat, true);

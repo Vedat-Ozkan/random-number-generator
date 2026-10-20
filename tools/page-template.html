@@ -18,7 +18,6 @@
 <meta name="apple-mobile-web-app-title" content="Random">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <script>
-// Set the theme before first paint to avoid a wrong-theme flash.
 (function () {
   var theme = null;
   try {
@@ -30,12 +29,10 @@
   }
   document.documentElement.setAttribute('data-theme', theme);
 })();
-// Home is flagged before first paint so the ad dock (Home only) never shifts the layout.
 try {
   var e = document.documentElement, hs = location.hash;
   if (e.getAttribute('data-entry') === '/' && (hs === '' || hs === '#' || hs === '#/')) e.setAttribute('data-home', '');
 } catch (err) {}
-// Ads are decided before first paint so the ad slot never takes space when off.
 try {
   var q = new URLSearchParams(location.search).get('noads');
   if (q === '1') localStorage.setItem('random:noads', '1');

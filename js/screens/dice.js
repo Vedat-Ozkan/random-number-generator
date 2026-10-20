@@ -37,9 +37,9 @@ export function render(root, params = {}) {
   if (!init) return;
   let timers = [];
   let els = [];
-  let pending = null; // values of an in-flight roll awaiting settle()
+  let pending = null;
   let lastTotal = null;
-  let sheet = null; // live Parameters controls, or null
+  let sheet = null;
   const notation = () => formatDice(dice());
   const chrome = toolChrome({
     tool: 'dice', preset: init.preset, title: 'Dice', historyKey: 'dice',
@@ -75,7 +75,6 @@ export function render(root, params = {}) {
     fit();
   }
 
-  // Dice shrink to fit the space left by the other controls (never below 40px).
   function fit() {
     if (!box.clientWidth || !box.clientHeight) return;
     const compact = matchMedia('(max-height: 600px)').matches;
@@ -112,7 +111,7 @@ export function render(root, params = {}) {
   }
 
   function roll() {
-    if (pending) settle(pending); // don't lose the in-flight roll's history/announcement
+    if (pending) settle(pending);
     clearTimers();
     const { sides } = dice();
     const values = els.map(() => randInt(1, sides));
@@ -138,7 +137,7 @@ export function render(root, params = {}) {
   }
 
   function applyPatch(patch) {
-    if (pending) settle(pending); // record the in-flight roll before the die set changes
+    if (pending) settle(pending);
     update((s) => { applyConfig('dice', s.dice, { ...extractConfig('dice', s.dice), ...patch }); });
     build();
     syncControls();

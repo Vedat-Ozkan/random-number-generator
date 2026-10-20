@@ -1,4 +1,3 @@
-// Bootstrap: theme, motion, router, keyboard, service worker.
 import { getState, subscribe, setSaveErrorHandler } from './store.js';
 import { startRouter, getPrimaryAction } from './router.js';
 import { getEntry, applyPreset, initHomeFlag } from './site.js';

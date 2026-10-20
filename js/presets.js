@@ -1,4 +1,3 @@
-// Presets, tool chrome (menu, preset bar) and share. DOM module.
 import { h, iconButton, historyButton, soundMenuItem, openMenu, promptDialog, confirmDialog, toast, copyText } from './ui.js';
 import {
   getState, update, subscribe, getPreset, addPreset, updatePreset, renamePreset, deletePreset,
@@ -19,7 +18,6 @@ function applyIfDiffers(tool, cfg) {
   update((s) => { applyConfig(tool, s[tool], cfg); });
 }
 
-// Call first in render(). Returns null if it redirected.
 export function initTool(tool, params = {}) {
   setActivePreset(null);
   const t = toolById(tool);

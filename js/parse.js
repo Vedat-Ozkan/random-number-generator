@@ -1,5 +1,3 @@
-// Pure parsers (no DOM, no store): items, weights, import splitting, dice notation.
-
 const MAX_ITEMS = 500;
 const MAX_ITEM_LEN = 200;
 
@@ -7,7 +5,6 @@ export function parseItems(text) {
   return String(text).split('\n').map((s) => s.trim()).filter(Boolean).map((s) => s.slice(0, MAX_ITEM_LEN)).slice(0, MAX_ITEMS);
 }
 
-// "Pizza *3" / "Pizza x3" -> weight 3. "Size \x3" -> literal "Size x3".
 export function parseWeighted(line) {
   const s = String(line).trim();
   let m = s.match(/^(.*\S)\s\\([*xX]\d{1,3})$/);

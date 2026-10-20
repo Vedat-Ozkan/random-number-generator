@@ -69,7 +69,7 @@ export function render(root, params = {}) {
   function newRound() {
     clearTimeout(timer);
     if (decorMotion() && revealed.size) {
-      grid.inert = true; // no taps while lots flip back
+      grid.inert = true;
       grid.querySelectorAll('.lot.revealed').forEach((b) => b.classList.remove('revealed'));
       timer = setTimeout(resetRound, 300);
     } else {

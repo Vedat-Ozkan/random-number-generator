@@ -1,20 +1,16 @@
-// Pure RNG helpers (no DOM). Source of randomness: crypto.getRandomValues only.
-
 export function randUint32() {
   return crypto.getRandomValues(new Uint32Array(1))[0];
 }
 
-// Unbiased inclusive integer in [min, max]; requires max - min + 1 <= 2**32.
 export function randInt(min, max) {
   const range = max - min + 1;
   if (range === 1) return min;
-  const limit = Math.floor(2 ** 32 / range) * range; // largest multiple of range
+  const limit = Math.floor(2 ** 32 / range) * range;
   let r;
-  do { r = randUint32(); } while (r >= limit); // rejection sampling
+  do { r = randUint32(); } while (r >= limit);
   return min + (r % range);
 }
 
-// In-place Fisher-Yates.
 export function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = randInt(0, i);
@@ -23,7 +19,6 @@ export function shuffle(arr) {
   return arr;
 }
 
-// k distinct integers in [min, max], not in `exclude`, in draw order.
 export function sampleDistinct(min, max, k, exclude = new Set()) {
   const size = max - min + 1;
   let excluded = 0;
@@ -44,7 +39,6 @@ export function sampleDistinct(min, max, k, exclude = new Set()) {
     return out;
   }
 
-  // Dense case: size <= 2 * (excluded + k), so enumeration is bounded.
   const candidates = [];
   for (let v = min; v <= max; v++) if (!exclude.has(v)) candidates.push(v);
   for (let i = 0; i < k; i++) {
@@ -60,8 +54,6 @@ export function sampleWithReplacement(min, max, k) {
   return out;
 }
 
-// Shared Number/List generate logic (spec 5.2). Pure: returns new drawn pool,
-// the values and any toast notes.
 export function draw({ min, max, count, noRepeat, allowDupes = false, drawn = [], sort = false, label = 'numbers', resetNote }) {
   const size = max - min + 1;
   const notes = [];
@@ -88,7 +80,6 @@ export function draw({ min, max, count, noRepeat, allowDupes = false, drawn = []
   return { values, drawn: pool, notes };
 }
 
-// Index in [0, weights.length) with probability proportional to weights[i] (integers >= 1).
 export function weightedIndex(weights, excludeSet = new Set()) {
   let total = 0;
   for (let i = 0; i < weights.length; i++) if (!excludeSet.has(i)) total += weights[i];
@@ -102,7 +93,6 @@ export function weightedIndex(weights, excludeSet = new Set()) {
   throw new Error('unreachable');
 }
 
-// Weighted counterpart of draw() over entry indices. Picks are distinct within a batch.
 export function drawWeighted({ weights, count, noRepeat, drawn = [], label = 'items', resetNote }) {
   const size = weights.length;
   const notes = [];
@@ -125,7 +115,6 @@ export function drawWeighted({ weights, count, noRepeat, drawn = [], label = 'it
   return { values, drawn: pool, notes };
 }
 
-// Shuffles names and deals them round-robin. Team sizes differ by at most 1.
 export function splitTeams(names, mode, n) {
   if (!names.length) return [];
   const teamCount = mode === 'teams' ? Math.min(n, names.length) : Math.ceil(names.length / n);

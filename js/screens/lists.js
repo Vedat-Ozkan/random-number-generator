@@ -1,4 +1,3 @@
-// #/lists: saved lists, ready-made lists and a "New list" button.
 import { h, iconButton, topBar, fab, openMenu, confirmDialog, promptDialog } from '../ui.js';
 import { getState, subscribe, deleteList, renameList } from '../store.js';
 import { BUILTIN_LISTS } from '../tools.js';
@@ -6,7 +5,6 @@ import { helpButton } from '../help.js';
 
 export const plural = (n) => `${n} ${n === 1 ? 'item' : 'items'}`;
 
-// Child rows for the saved lists (shared with Home's Saved region).
 export function listChildren() {
   return getState().lists.map((l) => ({
     name: l.name, sub: plural(l.items.length), href: `#/list/${encodeURIComponent(l.id)}`,
@@ -17,7 +15,6 @@ export function listChildren() {
   }));
 }
 
-// A saved item row: link plus a "⋮" menu (Rename, Edit, Delete).
 export function childRow(c) {
   const more = iconButton({
     icon: 'more', label: `Options for ${c.name}`,

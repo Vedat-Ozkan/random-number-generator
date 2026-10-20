@@ -1,4 +1,3 @@
-// Synthesized sounds (WebAudio) and haptics, honoring settings.
 import { getState } from './store.js';
 import { randInt } from './rng.js';
 
@@ -36,7 +35,7 @@ export function click() {
   try {
     const c = audio();
     if (c) clickAt(c, c.currentTime);
-  } catch { /* ignore */ }
+  } catch { }
 }
 
 export function ting() {
@@ -55,7 +54,7 @@ export function ting() {
       osc.start(t);
       osc.stop(t + 0.4);
     });
-  } catch { /* ignore */ }
+  } catch { }
 }
 
 export function rollClicks(n = 4, gap = 70) {
@@ -65,7 +64,7 @@ export function rollClicks(n = 4, gap = 70) {
     for (let i = 0; i < n; i++) {
       clickAt(c, c.currentTime + (i * gap) / 1000, 1 + randInt(-10, 10) / 100);
     }
-  } catch { /* ignore */ }
+  } catch { }
 }
 
 export function vibrate(pattern) {

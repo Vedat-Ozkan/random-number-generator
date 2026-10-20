@@ -6,7 +6,7 @@ import { setPrimaryAction } from '../router.js';
 import { extractConfig, applyConfig } from '../tools.js';
 import { initTool, toolChrome, share } from '../presets.js';
 
-const VS = '︎'; // text presentation, so iOS does not render suit glyphs as emoji
+const VS = '︎';
 const SUITS = [['♠', 'spades', false], ['♥', 'hearts', true], ['♦', 'diamonds', true], ['♣', 'clubs', false]];
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 const RANK_NAMES = ['Ace', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Jack', 'Queen', 'King'];

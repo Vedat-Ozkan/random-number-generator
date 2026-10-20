@@ -1,5 +1,3 @@
-// Zero-dep generator: HTML pages, sitemap, robots, ads.txt, sw.js precache + cache hash.
-// Run from anywhere:  node tools/build-pages.mjs
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -13,7 +11,6 @@ const errors = [];
 const warn = (m) => { warnings.push(m); console.warn('warning:', m); };
 const fail = (m) => errors.push(m);
 
-/* ---------- 1. config ---------- */
 const cfgSrc = readFileSync(at('js/config.js'));
 const cfg = await import('data:text/javascript;base64,' + cfgSrc.toString('base64'));
 const RAW = cfg.CONFIG;
@@ -25,7 +22,6 @@ for (const [key, derived] of Object.entries(derivedFor)) {
 const { SITE_URL, ADSENSE_CLIENT, ADS_ON, TIP_URL, TIP_LABEL, GSC_TOKEN } = cfg;
 console.log(`SITE_URL: ${SITE_URL || 'off'} | ADSENSE: ${ADS_ON ? 'on' : ADSENSE_CLIENT ? 'client only (no slot)' : 'off'} | TIP_URL: ${TIP_URL || 'off'} | GSC: ${GSC_TOKEN ? 'on' : 'off'}`);
 
-/* ---------- 2. data, template, validation ---------- */
 const { PAGES, GROUPS, SITE_NAME, ADS_PRIVACY } = await import(pathToFileURL(at('tools/pages-data.mjs')).href);
 const { parsePreset } = await import(pathToFileURL(at('js/site.js')).href);
 const groupIds = new Set(GROUPS.map(([id]) => id));
@@ -60,7 +56,6 @@ for (const p of PAGES) {
 }
 if (errors.length) { errors.forEach((e) => console.error('error:', e)); process.exit(1); }
 
-/* ---------- helpers ---------- */
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const swSrc = read('sw.js');
 const jsModules = [...swSrc.matchAll(/'(\.\/js\/[^']+\.js)'/g)].map((m) => m[1]).filter((m) => m !== './js/app.js');
@@ -110,7 +105,6 @@ function seoMeta(p) {
 
 const TIP_HTML = TIP_URL ? ` · <a href="${esc(TIP_URL)}" target="_blank" rel="noopener">${esc(TIP_LABEL)}</a>` : '';
 
-// Static help dialog: the page's SEO copy plus crawlable links to the other tools.
 function help(p, base) {
   const out = ['<dialog id="help" class="sheet help-sheet" aria-labelledby="help-h1">', '<div class="sheet-body">',
     '<div class="sheet-handle" aria-hidden="true"></div>', '<article class="help-doc">', `<h1 id="help-h1" tabindex="-1">${esc(p.h1)}</h1>`];
@@ -130,7 +124,6 @@ function help(p, base) {
 
 const BACK_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7"/></svg>';
 
-// Privacy (p.tool === false): a static full-height page; only .doc may scroll.
 function docPage(p) {
   const paras = p.intro.map((t) => `<p>${esc(t)}</p>`);
   if (ADSENSE_CLIENT) paras.push(`<p>${linkify(ADS_PRIVACY)}</p>`);
@@ -165,14 +158,12 @@ function render(p) {
     AD_SLOT: p.tool ? AD_SLOT : '',
     HELP: p.tool ? help(p, base) : '',
   };
-  // Function replacer: values may contain "$" sequences.
   const html = template.replace(/\{\{([A-Z_]+)\}\}/g, (m, k) => (k in vals ? vals[k] : m));
   const left = html.match(/\{\{[A-Z_]+\}\}/);
   if (left) { console.error(`error: unresolved placeholder ${left[0]} in ${p.slug || 'home'}`); process.exit(1); }
   return html.replace(/\r\n/g, '\n');
 }
 
-/* ---------- 3. write pages ---------- */
 const written = [];
 function write(rel, content) {
   const file = at(rel);
@@ -182,7 +173,6 @@ function write(rel, content) {
 }
 for (const p of PAGES) write(p.slug ? `${p.slug}/index.html` : 'index.html', render(p));
 
-/* ---------- 4. root files ---------- */
 const deleted = [];
 function remove(rel) { if (existsSync(at(rel))) { rmSync(at(rel)); deleted.push(rel); } }
 
@@ -198,7 +188,6 @@ write('robots.txt', ['User-agent: *', 'Allow: /', `Disallow: ${sitePath}tools/`,
 if (ADSENSE_CLIENT) write('ads.txt', `google.com, pub-${ADSENSE_CLIENT.replace(/^ca-pub-/, '')}, DIRECT, f08c47fec0942fa0\n`);
 else remove('ads.txt');
 
-/* ---------- 5. sw.js ---------- */
 const pageEntries = PAGES.filter((p) => p.slug).map((p) => `  './${p.slug}/',`).join('\n');
 let sw = swSrc.replace(/(\/\/ BUILD:PAGES-START)[\s\S]*?(\n\s*\/\/ BUILD:PAGES-END)/, (m, a, b) => `${a}\n${pageEntries}${b}`);
 if (!swSrc.includes('BUILD:PAGES-START') || !swSrc.includes('BUILD:PAGES-END')) { console.error('error: sw.js has no BUILD:PAGES markers'); process.exit(1); }

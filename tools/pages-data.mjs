@@ -1,4 +1,3 @@
-// Page data for tools/build-pages.mjs. All copy is plain text; the build escapes it.
 import { BUILTIN_LISTS } from '../js/tools.js';
 
 export const SITE_NAME = 'Random';

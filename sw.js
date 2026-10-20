@@ -1,5 +1,5 @@
 // CACHE and the PAGES block are written by `node tools/build-pages.mjs`. Do not edit by hand.
-const CACHE = 'random-b1fe567a58';
+const CACHE = 'random-78ecbc4e7c';
 const PRECACHE = [
   './',
   './index.html',
@@ -94,8 +94,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(caches.match(req, { ignoreSearch: true }).then((r) => r || fetch(req)));
 });
 
-// Navigations: exact page from cache; canonicalize '/x' and '/x/index.html' to '/x/' by redirect
-// (so relative assets resolve); network; offline + unknown page -> redirect to the app root.
 async function navigate(req) {
   const u = new URL(req.url);
   const exact = await caches.match(req, { ignoreSearch: true });

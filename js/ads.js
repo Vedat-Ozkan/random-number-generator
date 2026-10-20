@@ -1,4 +1,3 @@
-// Lazy AdSense loader and the owner "no ads" flag. AdSense is referenced nowhere else.
 import { ADS_ON, ADSENSE_CLIENT } from './config.js';
 
 const KEY = 'random:noads';
@@ -11,7 +10,7 @@ export function setNoAds(on) {
   try {
     if (on) localStorage.setItem(KEY, '1');
     else localStorage.removeItem(KEY);
-  } catch { /* ignore */ }
+  } catch { }
   document.documentElement.toggleAttribute('data-noads', !!on);
 }
 
@@ -25,9 +24,6 @@ export function initAds() {
   let pushed = false;
   let interacted = false;
   const shown = () => slot.offsetHeight > 0 && !html.hasAttribute('data-noads');
-  // Never at boot: needs one user interaction and the dock (Home only) actually displayed.
-  // The unit is only pushed while the dock is displayed (AdSense measures the slot width),
-  // so a tap that navigates away from Home waits for the next visit to Home.
   function tryLoad() {
     if (pushed || !interacted || !shown()) return;
     if (!scriptAdded) {

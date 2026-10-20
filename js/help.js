@@ -1,5 +1,3 @@
-// Help for every in-app screen. The "?" button opens either the page's static #help dialog
-// (SEO copy, on the page's own entry route) or a sheet built from HELP.
 import { h, iconButton, openSheet } from './ui.js';
 import { getEntry } from './site.js';
 import { currentPath } from './router.js';
@@ -166,7 +164,6 @@ export function openHelp(key, { title } = {}) {
     }
     dlg.scrollTop = 0;
     if (!dlg.open) dlg.showModal();
-    // showModal focuses the first link (and scrolls to it); start at the top instead.
     dlg.querySelector('h1')?.focus({ preventScroll: true });
     dlg.scrollTop = 0;
     return;

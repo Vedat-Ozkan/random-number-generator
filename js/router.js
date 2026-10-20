@@ -1,5 +1,3 @@
-// Hash router with navDepth-based back handling.
-
 let root = null;
 let routes = [];
 let cleanup = null;
@@ -21,7 +19,6 @@ export function replace(hash) {
 
 export const hashQuery = () => new URLSearchParams(location.hash.split('?')[1] || '');
 
-// Drops ?query from the hash without firing hashchange or touching history depth.
 export function stripHashQuery() {
   if (!location.hash.includes('?')) return;
   history.replaceState(history.state, '', '#' + currentPath());
@@ -47,7 +44,6 @@ function match(pattern, path) {
   return params;
 }
 
-// Normalized current route path, with the page's default applied to an empty hash.
 export function currentPath() {
   let path = location.hash.replace(/^#/, '').split('?')[0] || defaultPath;
   if (path.length > 1) path = path.replace(/\/+$/, '');
@@ -65,7 +61,7 @@ function resolve() {
 
 function mount() {
   beforeMountHooks.forEach((fn) => fn());
-  try { cleanup?.(); } catch { /* ignore */ }
+  try { cleanup?.(); } catch { }
   cleanup = null;
   primaryAction = null;
   root.replaceChildren();
@@ -87,8 +83,8 @@ export function startRouter(mountEl, routeTable, defaultRoute = '/') {
   window.addEventListener('hashchange', () => {
     const st = history.state;
     if (replacing) replacing = false;
-    else if (st && typeof st.d === 'number') depth = st.d; // history traversal
-    else depth += 1; // new user navigation
+    else if (st && typeof st.d === 'number') depth = st.d;
+    else depth += 1;
     history.replaceState({ d: depth }, '');
     mount();
   });

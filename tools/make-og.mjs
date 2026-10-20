@@ -1,4 +1,3 @@
-// Draws og.png (1200x630) with zero dependencies. Run: node tools/make-og.mjs
 import { deflateSync, crc32 as zcrc32 } from 'node:zlib';
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -7,7 +6,6 @@ import path from 'node:path';
 const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'og.png');
 const W = 1200, H = 630, SS = 3;
 
-/* ---- icon geometry (copied from make-icons.mjs) ---- */
 const R = 120, HALF_W = 14, RAD = Math.PI / 180;
 const ARCS = [[200, 330], [20, 150]];
 function arrowTriangle(deg) {
@@ -23,7 +21,6 @@ function inTriangle(tri, x, y) {
   const s = [cross(tri[0], tri[1], p), cross(tri[1], tri[2], p), cross(tri[2], tri[0], p)];
   return s.every((v) => v >= 0) || s.every((v) => v <= 0);
 }
-// 0 = none, 1 = arc A (light), 2 = arc B (accent)
 function glyphPart(x, y) {
   const dx = x - 256, dy = y - 256, d = Math.hypot(dx, dy);
   if (d >= R - HALF_W && d <= R + HALF_W) {
@@ -36,7 +33,6 @@ function glyphPart(x, y) {
   return t >= 0 ? t + 1 : 0;
 }
 
-/* ---- shapes ---- */
 function inRR(x, y, x0, y0, w, h, r) {
   if (x < x0 || y < y0 || x > x0 + w || y > y0 + h) return false;
   const cx = Math.min(Math.max(x, x0 + r), x0 + w - r);
@@ -91,7 +87,6 @@ function colorAt(x, y) {
   return c;
 }
 
-/* ---- PNG ---- */
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {
@@ -135,7 +130,7 @@ for (let py = 0; py < H; py++) {
 const ihdr = Buffer.alloc(13);
 ihdr.writeUInt32BE(W, 0);
 ihdr.writeUInt32BE(H, 4);
-ihdr[8] = 8; ihdr[9] = 2; // RGB
+ihdr[8] = 8; ihdr[9] = 2;
 writeFileSync(OUT, Buffer.concat([
   Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
   chunk('IHDR', ihdr), chunk('IDAT', deflateSync(raw)), chunk('IEND', Buffer.alloc(0)),

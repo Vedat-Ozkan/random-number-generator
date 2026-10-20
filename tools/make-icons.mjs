@@ -1,4 +1,3 @@
-// Rasterizes the app icon into PNGs. Zero dependencies. Run: node tools/make-icons.mjs
 import { deflateSync, crc32 as zcrc32 } from 'node:zlib';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -6,23 +5,23 @@ import path from 'node:path';
 
 const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'icons');
 const BG = [0x11, 0x11, 0x13];
-const LIGHT = [0xf2, 0xf2, 0xf3]; // arc A
-const ACCENT = [0x8b, 0x93, 0xff]; // arc B
+const LIGHT = [0xf2, 0xf2, 0xf3];
+const ACCENT = [0x8b, 0x93, 0xff];
 const R = 120;
-const HALF_W = 14; // stroke width 28 (radius 106..134)
-const ARROW_HALF_BASE = 38; // base width 76 (radius 82..158)
+const HALF_W = 14;
+const ARROW_HALF_BASE = 38;
 const ARROW_APEX = 56;
 const RAD = Math.PI / 180;
 
 const ARCS = [[200, 330], [20, 150]];
-const ARROW_ANGLES = [330, 150]; // arrowheads of arc A and arc B
+const ARROW_ANGLES = [330, 150];
 
 function arrowTriangle(deg) {
   const t = deg * RAD;
   const px = 256 + R * Math.cos(t);
   const py = 256 + R * Math.sin(t);
-  const ux = Math.cos(t), uy = Math.sin(t); // radial
-  const tx = -Math.sin(t), ty = Math.cos(t); // clockwise tangent
+  const ux = Math.cos(t), uy = Math.sin(t);
+  const tx = -Math.sin(t), ty = Math.cos(t);
   return [
     [px - ARROW_HALF_BASE * ux, py - ARROW_HALF_BASE * uy],
     [px + ARROW_HALF_BASE * ux, py + ARROW_HALF_BASE * uy],
@@ -38,7 +37,6 @@ function inTriangle(tri, x, y) {
   return s.every((v) => v >= 0) || s.every((v) => v <= 0);
 }
 
-// Returns 0 (none), 1 (arc A / light) or 2 (arc B / accent).
 function glyphPart(x, y) {
   const dx = x - 256, dy = y - 256;
   const d = Math.hypot(dx, dy);
@@ -120,12 +118,12 @@ function encodePng(size, rgba) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(size, 0);
   ihdr.writeUInt32BE(size, 4);
-  ihdr[8] = 8; // bit depth
-  ihdr[9] = 6; // RGBA
+  ihdr[8] = 8;
+  ihdr[9] = 6;
   const stride = size * 4;
   const raw = Buffer.alloc((stride + 1) * size);
   for (let y = 0; y < size; y++) {
-    raw[y * (stride + 1)] = 0; // filter: none
+    raw[y * (stride + 1)] = 0;
     rgba.copy(raw, y * (stride + 1) + 1, y * stride, (y + 1) * stride);
   }
   return Buffer.concat([
@@ -144,18 +142,17 @@ const OUTPUTS = [
   ['icon-48.png', 48, { rounded: true, glyphScale: 1 }],
 ];
 
-// favicon.ico with embedded PNGs (Google's favicon crawler requests /favicon.ico).
 function encodeIco(sizes) {
   const pngs = sizes.map((s) => encodePng(s, render(s, { rounded: true, glyphScale: 1 })));
   const head = Buffer.alloc(6 + 16 * pngs.length);
-  head.writeUInt16LE(1, 2); // type: icon
+  head.writeUInt16LE(1, 2);
   head.writeUInt16LE(pngs.length, 4);
   let offset = head.length;
   pngs.forEach((png, i) => {
     const e = 6 + 16 * i;
-    head[e] = sizes[i]; head[e + 1] = sizes[i]; // width, height (<256)
-    head.writeUInt16LE(1, e + 4); // planes
-    head.writeUInt16LE(32, e + 6); // bits per pixel
+    head[e] = sizes[i]; head[e + 1] = sizes[i];
+    head.writeUInt16LE(1, e + 4);
+    head.writeUInt16LE(32, e + 6);
     head.writeUInt32LE(png.length, e + 8);
     head.writeUInt32LE(offset, e + 12);
     offset += png.length;
@@ -163,7 +160,6 @@ function encodeIco(sizes) {
   return Buffer.concat([head, ...pngs]);
 }
 
-// icon.svg uses the same geometry as the PNG rasterizer.
 function svgIcon() {
   const f = (n) => Math.round(n * 100) / 100;
   const at = (deg) => [f(256 + R * Math.cos(deg * RAD)), f(256 + R * Math.sin(deg * RAD))];

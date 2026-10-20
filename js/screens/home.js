@@ -7,7 +7,6 @@ import { childRow, listChildren } from './lists.js';
 
 const tile = (name) => h('span', { class: 'tile' }, icon(name));
 
-// Child rows (presets, or saved lists for the List tool) of a tool.
 function childrenOf(tool) {
   if (tool.id === 'list') return listChildren();
   const st = getState();

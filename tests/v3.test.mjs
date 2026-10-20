@@ -1,5 +1,3 @@
-// Phase A tests: parsers, rng additions, tools registry, share params, search, store migration.
-// Run: node tests/v3.test.mjs
 import assert from 'node:assert/strict';
 import { parseWeighted, parseItems, splitImport, parseDice, formatDice } from '../js/parse.js';
 import { weightedIndex, drawWeighted, drawLottery, splitTeams, shuffle, draw } from '../js/rng.js';
@@ -140,7 +138,6 @@ test('cleanConfig strict and lenient', () => {
   assert.deepEqual(cleanConfig('dice', { count: 0 }, { lenient: true }), CONFIG_DEFAULTS.dice);
   assert.deepEqual(cleanConfig('teams', { mode: 'x' }, { lenient: true }), CONFIG_DEFAULTS.teams);
   assert.deepEqual(Object.keys(cleanConfig('dice', { modifier: 2, extra: 1 })), ['count', 'sides', 'modifier']);
-  // fixes
   assert.deepEqual([cleanConfig('number', { from: 9, to: 2 }).from, cleanConfig('number', { from: 9, to: 2 }).to], [2, 9]);
   assert.equal(cleanConfig('number', { from: 1, to: 200000, noRepeat: true }).noRepeat, false);
   assert.equal(cleanConfig('lots', { n: 5, k: 20 }).k, 4);

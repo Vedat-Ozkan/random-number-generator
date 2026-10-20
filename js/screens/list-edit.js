@@ -60,7 +60,7 @@ export function render(root, { id }) {
         l.pickCount = Math.min(l.pickCount, Math.max(1, Math.min(20, newItems.length)));
       });
       if (navDepth() > 0) back();
-      else replace(`#/list/${encodeURIComponent(existing.id)}`); // deep-linked editor: don't go Home
+      else replace(`#/list/${encodeURIComponent(existing.id)}`);
     } else {
       const nid = newId();
       update((s) => {
@@ -84,5 +84,5 @@ export function render(root, { id }) {
       h('div', { class: 'editor-actions' },
         h('button', { class: 'btn', attrs: { type: 'button' }, text: 'Cancel', on: { click: back } }),
         h('button', { class: 'btn filled', attrs: { type: 'button' }, text: 'Save', on: { click: save } }))));
-  if (!existing) requestAnimationFrame(() => name.focus({ preventScroll: true })); // after the router focuses the h1
+  if (!existing) requestAnimationFrame(() => name.focus({ preventScroll: true }));
 }

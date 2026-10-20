@@ -1,4 +1,3 @@
-// App state: one localStorage key, normalized on load.
 import { CONFIG_DEFAULTS, CONFIG_TOOLS, cleanConfig, BUILTIN_LISTS, extractConfig, configKey } from './tools.js';
 import { randInt } from './rng.js';
 
@@ -9,7 +8,7 @@ export const DEFAULTS = {
   version: VERSION,
   settings: { theme: 'system', sound: true, vibration: true, animations: true },
   number: { from: 1, to: 10, noRepeat: false, drawn: [], count: 1, sort: false, allowDupes: false },
-  lists: [], // new installs start empty; ready-made lists are offered in #/lists
+  lists: [],
   dice: { count: 2, sides: 6, modifier: 0, values: [1, 1] },
   coin: { heads: 0, tails: 0, last: null, run: 0, best: 0, bestFace: null },
   lots: { n: 6, k: 1 },
@@ -18,14 +17,13 @@ export const DEFAULTS = {
   wheel: { ...CONFIG_DEFAULTS.wheel },
   lottery: { ...CONFIG_DEFAULTS.lottery },
   cards: { ...CONFIG_DEFAULTS.cards, drawn: [] },
-  presets: [], // [{ id, tool, name, config, t }] in creation order
+  presets: [],
   history: {},
 };
 
-// MIGRATIONS[v] upgrades a state of version v to v + 1.
 const MIGRATIONS = [
-  (raw) => raw, // 0 -> 1: unversioned data is already compatible
-  (raw) => ({ ...raw, version: 2 }), // 1 -> 2: new sections are filled from defaults by normalize()
+  (raw) => raw,
+  (raw) => ({ ...raw, version: 2 }),
 ];
 
 export const MAX_PRESETS_PER_TOOL = 20;
@@ -209,7 +207,6 @@ export function getState() { return state; }
 
 export function update(fn) {
   fn(state);
-  // Keep working edits across sessions without replacing the saved baseline.
   const preset = state.presets.find((p) => p.id === activePresetId);
   if (preset) {
     const config = extractConfig(preset.tool, state[preset.tool]);
@@ -246,7 +243,6 @@ export function deleteList(id) {
 
 const newId = () => globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36) + randInt(0, 2 ** 31).toString(36);
 
-// Returns the new preset id, or null when a limit is hit.
 export function addPreset(tool, name, config) {
   const ps = state.presets;
   if (ps.length >= MAX_PRESETS || ps.filter((p) => p.tool === tool).length >= MAX_PRESETS_PER_TOOL) return null;
@@ -289,7 +285,6 @@ export function renameList(id, name) {
   });
 }
 
-// Creates the builtin list when it is missing. Returns the list or null.
 export function ensureBuiltinList(id) {
   const existing = state.lists.find((l) => l.id === id);
   if (existing) return existing;
@@ -299,9 +294,8 @@ export function ensureBuiltinList(id) {
   return state.lists.find((l) => l.id === id);
 }
 
-// Wipes storage and resets memory WITHOUT writing back (caller reloads).
 export function clearAll() {
-  try { localStorage.removeItem(KEY); } catch { /* ignore */ }
+  try { localStorage.removeItem(KEY); } catch { }
   state = normalize(null);
   activePresetId = null;
 }
