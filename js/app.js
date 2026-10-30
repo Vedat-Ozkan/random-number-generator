@@ -1,5 +1,5 @@
 import { getState, subscribe, setSaveErrorHandler } from './store.js';
-import { startRouter, getPrimaryAction } from './router.js';
+import { startRouter, getPrimaryAction, beforeMount, currentPath } from './router.js';
 import { getEntry, applyPreset, initHomeFlag } from './site.js';
 import { initAds } from './ads.js';
 import { toast, isMenuOpen, closeMenu, isResultOpen, closeResult } from './ui.js';
@@ -71,8 +71,19 @@ subscribe(applyAll);
 setSaveErrorHandler(() => toast('Storage full — data not saved'));
 applyAll();
 
+const LAST_ROUTE = 'random:route';
+
+function restoreRoute() {
+  if (location.hash.length > 1 || getEntry() !== '/') return;
+  let last = null;
+  try { last = localStorage.getItem(LAST_ROUTE); } catch { }
+  if (last && last !== '/' && /^\/[\w\/-]+$/.test(last)) history.replaceState(history.state, '', '#' + last);
+}
+
 applyPreset();
 initHomeFlag();
+restoreRoute();
+beforeMount(() => { try { localStorage.setItem(LAST_ROUTE, currentPath()); } catch { } });
 startRouter(document.getElementById('app'), ROUTES, getEntry());
 initAds();
 

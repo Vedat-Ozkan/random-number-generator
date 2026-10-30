@@ -1,5 +1,5 @@
 // CACHE and the PAGES block are written by `node tools/build-pages.mjs`. Do not edit by hand.
-const CACHE = 'random-78ecbc4e7c';
+const CACHE = 'random-74c660f4f8';
 const PRECACHE = [
   './',
   './index.html',
